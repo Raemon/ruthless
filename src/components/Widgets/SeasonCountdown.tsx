@@ -1,12 +1,14 @@
 import React from 'react';
+import { dayCountToCalendarDay, DRY_SEASON_START_DAY, MONSOON_START_DAY, SUMMER_START_DAY } from '../../collections/constants';
 
 const SeasonCountdown = ({dayCount}: {dayCount: number}) => {
-  if (dayCount < 20) {
-    return <div>{20 - dayCount} days till <br/>Monsoon Season</div>
-  } else if (dayCount < 40) {
-    return <div>{40 - dayCount} days till <br/>Summer</div>
-  } else if (dayCount < 60) {
-    return <div>{60 - dayCount} days till <br/>Dry Season</div>
+  const calendarDay = dayCountToCalendarDay(dayCount);
+  if (calendarDay < MONSOON_START_DAY) {
+    return <div>{MONSOON_START_DAY - calendarDay} days till <br/>Monsoon Season</div>
+  } else if (calendarDay < SUMMER_START_DAY) {
+    return <div>{SUMMER_START_DAY - calendarDay} days till <br/>Summer</div>
+  } else if (calendarDay < DRY_SEASON_START_DAY) {
+    return <div>{DRY_SEASON_START_DAY - calendarDay} days till <br/>Dry Season</div>
   }
 }
 

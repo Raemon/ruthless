@@ -182,6 +182,7 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, n
       if (!cardPosition) return
       if (cardPosition[currentAttribute] === 0) {
         setCardPositions((cardPositions: Record<string, CardPosition>) => {
+          if (!cardPositions[id]) return cardPositions
           const newCardPositions = {...cardPositions}
           deleteCard(newCardPositions, id)
           const corpseCard = cardPosition.corpse && createCardPosition(newCardPositions, 

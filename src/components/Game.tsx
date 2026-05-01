@@ -8,12 +8,21 @@ import { startingCards } from '../collections/cards';
 import { createCardPosition } from '../collections/spawningUtils';
 import { useCardPositions } from '../collections/useCardPositions';
 import { CardPosition } from '../collections/types';
+import { isMonsoon } from '../collections/constants';
+import { useMonsoonWind } from '../collections/useMonsoonWind';
+import RainOverlay from './RainOverlay';
 
 export const debugging = false
 
 export function handleStart(event: DraggableEvent) {
   event.stopPropagation();
 }
+
+const getMapImage = (dayCount: number) =>
+  isMonsoon(dayCount) ? 'monsoonMap.jpg' : (isNight(dayCount) ? 'map2night.jpg' : 'map2.jpg');
+
+const getInnerHaze = (dayCount: number) =>
+  isMonsoon(dayCount) ? "rgba(60,80,100,.45)" : (isNight(dayCount) ? "rgba(200,210,220,.3)" : "rgba(220,210,200,.7)");
 
 const useStyles = createUseStyles({
   root: {
@@ -94,6 +103,18 @@ const useStyles = createUseStyles({
     cursor: "pointer",
     zIndex: 9999
   },
+  monsoonLabel: {
+    position: "absolute",
+    top: 40,
+    right: 120,
+    fontFamily: "Papyrus",
+    fontWeight: 600,
+    color: "white",
+    textShadow: "0 0 4px rgba(0,0,0,.6)",
+    pointerEvents: "none",
+    transition: "opacity 3s ease-in-out",
+    zIndex: 9999,
+  },
   latestCard: {
     position: "absolute",
     zIndex: 9999,
@@ -127,6 +148,9 @@ function Game() {
   const [dayCount, setDayCount] = useState(0);
   // const [lastMouseMoved, setLastMouseMoved] = useState(new Date().getTime());
   const [paused, setPaused] = useState(false);
+
+  const monsoonActive = isMonsoon(dayCount);
+  useMonsoonWind({monsoonActive, paused, setCardPositions});
 
   // function handleMouseMove() {
   //   setLastMouseMoved(new Date().getTime());
@@ -162,7 +186,7 @@ function Game() {
   });
 
   return (
-    <div className={classes.root} style={{background: isNight(dayCount) ? "Url('map2night.jpg')" : "Url('map2.jpg')"}}>
+    <div className={classes.root} style={{background: `Url('${getMapImage(dayCount)}')`}}>
       {
         debugging &&
         <div style={{position: "absolute", top: 0, left: 0, zIndex: 9999}}>
@@ -172,9 +196,7 @@ function Game() {
       {paused && <div className={classes.pauseScreen} onClick={() => setPaused(false)}>
         Paused
       </div>}
-      <div className={classes.style} style={{
-        background:isNight(dayCount) ? "rgba(200,210,220,.3)" : "rgba(220,210,200,.7)"
-      }}>
+      <div className={classes.style} style={{background: getInnerHaze(dayCount)}}>
         <ScalingField>
           <Draggable onStart={handleStart}>
             <div className={classes.map}>
@@ -194,6 +216,8 @@ function Game() {
           </Draggable>
         </ScalingField>
       </div>
+      <RainOverlay active={monsoonActive} />
+      <div className={classes.monsoonLabel} style={{opacity: monsoonActive ? 1 : 0}}>Monsoon Season</div>
       <SunDial dayCount={dayCount} setDayCount={setDayCount} />
       <div className={classes.reset} onClick={() => setCardPositions(initialCardPositions)}>New Game</div>
       {latestCardPosition && cardPositions[latestCardPosition.id] && <div className={classes.latestCard} 

@@ -9,6 +9,7 @@ const useStyles = createUseStyles({
     right: 10,
     height: 100,
     width: 100,
+    zIndex: 9999,
   },
 });
 
