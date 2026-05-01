@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# Ruthless
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app) and is deployed on [Vercel](https://vercel.com/). Pushes to `master` are deployed automatically; you can also deploy manually with `vercel --prod`.
 
 ## Available Scripts
 
