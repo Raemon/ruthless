@@ -1,7 +1,7 @@
 import moment from "moment";
 import React, { useState, useEffect } from "react";
 import { createUseStyles } from "react-jss";
-import { DAY_LENGTH_MS } from "../collections/constants";
+import { DAY_LENGTH_MS, isMonsoon } from "../collections/constants";
 
 const useStyles = createUseStyles({
   root: {
@@ -11,6 +11,7 @@ const useStyles = createUseStyles({
     height: 100,
     width: 100,
     zIndex: 9999,
+    transition: "filter 3s ease-in-out",
   },
 });
 
@@ -45,9 +46,10 @@ function SunDial({dayCount, setDayCount}:{dayCount: number, setDayCount: React.D
 
   const dayCountRemainder = dayCount % 2;
   const dayCountWhole = Math.floor(dayCount / 2);
+  const needsHalo = isNight(dayCount) || isMonsoon(dayCount);
 
   return (
-    <svg className={classes.root}>
+    <svg className={classes.root} style={{filter: needsHalo ? "drop-shadow(0 0 6px rgba(255,255,255,.55))" : "none"}}>
       <circle
         stroke="rgba(0,0,0,.2)"
         fill="transparent"

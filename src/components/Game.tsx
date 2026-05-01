@@ -11,13 +11,14 @@ import { CardPosition } from '../collections/types';
 import { CARD_HEIGHT, CARD_WIDTH, DEBUGGING, isMonsoon } from '../collections/constants';
 import { useMonsoonWind } from '../collections/useMonsoonWind';
 import RainOverlay from './RainOverlay';
+import MonsoonDebugger from './MonsoonDebugger';
 
 export function handleStart(event: DraggableEvent) {
   event.stopPropagation();
 }
 
 const getMapImage = (dayCount: number) =>
-  isMonsoon(dayCount) ? 'monsoonMap.jpg' : (isNight(dayCount) ? 'map2night.jpg' : 'map2.jpg');
+  isMonsoon(dayCount) ? (isNight(dayCount) ? 'monsoonMapNight.jpg' : 'monsoonMap.jpg') : (isNight(dayCount) ? 'map2night.jpg' : 'map2.jpg');
 
 const getInnerHaze = (dayCount: number) =>
   isMonsoon(dayCount) ? "rgba(60,80,100,.45)" : (isNight(dayCount) ? "rgba(200,210,220,.3)" : "rgba(220,210,200,.7)");
@@ -154,7 +155,16 @@ function Game() {
   const [paused, setPaused] = useState(false);
 
   const monsoonActive = isMonsoon(dayCount);
-  useMonsoonWind({monsoonActive, paused, setCardPositions});
+  // Real-time start of the current monsoon, so the wave model can use a
+  // season-relative phase that resets cleanly each monsoon (instead of being
+  // keyed to wall-clock time). Set when monsoonActive flips true, cleared
+  // when it flips false.
+  const [monsoonStartedAt, setMonsoonStartedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (monsoonActive && monsoonStartedAt === null) setMonsoonStartedAt(Date.now());
+    if (!monsoonActive && monsoonStartedAt !== null) setMonsoonStartedAt(null);
+  }, [monsoonActive, monsoonStartedAt]);
+  useMonsoonWind({monsoonActive, monsoonStartedAt, paused, setCardPositions});
 
   // function handleMouseMove() {
   //   setLastMouseMoved(new Date().getTime());
@@ -220,10 +230,11 @@ function Game() {
           </Draggable>
         </ScalingField>
       </div>
-      <RainOverlay active={monsoonActive} />
+      <RainOverlay active={monsoonActive} monsoonStartedAt={monsoonStartedAt} />
       <div className={classes.monsoonLabel} style={{opacity: monsoonActive ? 1 : 0}}>Monsoon Season</div>
       <SunDial dayCount={dayCount} setDayCount={setDayCount} />
       <div className={classes.reset} onClick={() => setCardPositions(initialCardPositions)}>New Game</div>
+      {DEBUGGING && <MonsoonDebugger monsoonStartedAt={monsoonStartedAt} />}
     </div>
   );
 }

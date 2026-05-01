@@ -7,6 +7,13 @@ export const startingCards: CardSlug[] = [
   'ruth',
   'shoresidePath',
   'crate',
+  // 'sticks',
+  // 'coconutTree',
+  // 'wildBoar',
+  // 'smallFire',
+  // 'ancientTree',
+  // 'cabin',
+  // 'shelter',
   // 'wildBoar',
   // 'smallFire',
   // 'milo',
@@ -91,7 +98,7 @@ export const allCards: Record<CardSlug, CardType> = {
   'sticks': {
     name: "Sticks",
     imageUrl: 'sticks.png',
-    movedByMonsoon: 1,
+    movedByMonsoon: 2,
     fuel: 100,
   },
   'longStick': {
@@ -379,12 +386,12 @@ export const allCards: Record<CardSlug, CardType> = {
   'hammer': {
     name: "Hammer",
     imageUrl: 'hammer.png',
-    movedByMonsoon: 1,
+    movedByMonsoon: .5,
   },
   'workBench': {
     name: "Work Bench",
     imageUrl: 'crudeWorkbench.png',
-    movedByMonsoon: 1,
+    movedByMonsoon: .5,
   },
 
   'shelter': {
@@ -392,7 +399,7 @@ export const allCards: Record<CardSlug, CardType> = {
     imageUrl: 'shelter.png',
     rest: 600,
     cardText: <div><em>Room for two, barely</em></div>,
-    movedByMonsoon: 1,
+    movedByMonsoon: .01,
     spawnInfo: [
       {
         duration: 6000,
