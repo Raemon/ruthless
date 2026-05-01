@@ -7,17 +7,18 @@ export const startingCards: CardSlug[] = [
   'ruth',
   'shoresidePath',
   'crate',
-  'smallFire',
-  'milo',
-  'hewnLog', 'hewnLog', 'hewnLog', 'hewnLog', 'hatchet',
-  'hatchet',
+  // 'smallFire',
+  // 'milo',
+  // 'carlos',
+  // 'raft',
+  // 'shelteredCove'
   // 'smallFire'
   // 'mysteriousRuin'
 ]
 
 export type CardSlug = 
   'carlos'|'ruth'|'milo'|
-  'coconutTree'|'tree'|'ancientTree'|'jungleTree'|'bananaTree'|
+  'coconutTree'|'tree'|'ancientTree'|'jungleTree'|'bananaTree'|'greatLog'|
   'fallenLog'|'driftWoodLog'|'hewnLog'|'flint'|'sticks'|'longStick'|'rocks'|'smallRoundStone'|
   'coconut'|'seaweed'|'cannedBeans'|'bakedSeaweed'|'bananas'|'openCoconut'|
   'shipwreckedCorpse'|'ruthCorpse'|'carlosCorpse'|'miloCorpse'|
@@ -28,18 +29,18 @@ export type CardSlug =
   'crate'|'thinkingChair'|
   'smallFire'|
   'raft'|
-  'ideaFire'|'ideaRaft'|'ideaHatchet'|'ideaShelter'|'ideaCabin'|'ideaRope'|'ideaWorkbench'|'ideaThinkingChair'|'ideaThinking'|
+  'ideaFire'|'ideaRaft'|'ideaHatchet'|'ideaShelter'|'ideaCabin'|'ideaRope'|'ideaWorkbench'|'ideaHarpoon'|'ideaSpear'|'ideaThinkingChair'|'ideaThinking'|'ideaWhereAreWe'|'ideaGatherSurvivors'|'ideaEscape'|'ideaBiggerBoat'|
   'ideaGatherSurvivors'|'ideaEscape'|'ideaBiggerBoat'|
   'sexualTensionCarlosRuth'|'sexualTensionCarlosRuth2'|'cameraderieRuthCarlos'|'loveCarlosRuth'|
   'shelter'|'cabin'|
-  'hatchet'|'spear'|'hammer'|'workBench'|'rope'|
+  'hatchet'|'spear'|'hammer'|'workBench'|'rope'|'harpoon'|
   'distantFigure'|'feyHorror'|'dryCourtGuardian'|
   'jungleShrine'|'visionDryCourtSacrifice'|'aceOfSuns'|'visionDryCourtOffering'|'visionDryThroneJourney'|
   'miloUnsettlingFeeling'|'carlosUnsettlingFeeling'|'ruthUnsettlingFeeling'|
   'wildBoar'|'boarCarcass'|'rawMeat'|'cookedMeat'|
+  'circlingShark'|
   'mysteriousRuin'|'ancientCalendar'|
-  'islandShrine'|'visionMonsoonCourtOffering'|
-  "safeHarbor"
+  'islandShrine'|'visionMonsoonCourtOffering'
 
 export const allCards: Record<CardSlug, CardType> = {
   "ruth": {
@@ -179,7 +180,8 @@ export const allCards: Record<CardSlug, CardType> = {
   'ominousWaters': {
     name: "Ominous Waters",
     backgroundImage: "ominousWaters.jpg",
-    loot: ['islandShrine', 'unnaturalStorm'],
+    loot: ['islandShrine', 'unnaturalStorm', 'circlingShark'],
+    secondaryLoot: ['circlingShark', 'circlingShark'],
     large: true,
   },
   'unnaturalStorm': {
@@ -344,13 +346,32 @@ export const allCards: Record<CardSlug, CardType> = {
     imageUrl: 'hatchet.png',
     destroyedByMonsoon: true,
   },
-
   'spear': {
     name: "Spear",
-    imageUrl: 'spear.png',
+    imageUrl: 'spear.jpg',
     destroyedByMonsoon: true,
   },
-
+  'harpoon': {
+    name: "Harpoon",
+    imageUrl: 'harpoon.png',
+    destroyedByMonsoon: true,
+  },
+  'ideaSpear': {
+    name: "Idea: Spear",
+    imageUrl: "ideaSpear.png",
+    idea: true,
+    cardText: <div>
+      <div>Rope, Flint, Sticks </div>
+    </div>
+  },
+  'ideaHarpoon': {
+    name: "Idea: Harpoon",
+    imageUrl: "ideaHarpoon.png",
+    idea: true,
+    cardText: <div>
+      <div>Rope, Spear</div>
+    </div>
+  },
   'hammer': {
     name: "Hammer",
     imageUrl: 'hammer.png',
@@ -458,7 +479,15 @@ export const allCards: Record<CardSlug, CardType> = {
     imageUrl: "ideaThinking.png",
     idea: true,
     cardText: <div>
-      <div>Milo, Idea</div>
+      <div>1 or more Ideas, Milo, Thinking Chair</div>
+    </div>
+  },
+  'ideaWhereAreWe': {
+    name: 'Idea: Where are we?',
+    imageUrl: "ideaWhereAreWe.png",
+    idea: true,
+    cardText: <div>
+      <div>Milo, Something Tall</div>
     </div>
   },
   'ideaWorkbench': {
@@ -583,6 +612,15 @@ export const allCards: Record<CardSlug, CardType> = {
     backgroundImage: "boarCarcass.jpg",
     destroyedByMonsoon: true,
   },
+  'circlingShark': {
+    name: "Circling Shark",
+    backgroundImage: "circlingShark.jpg",
+    enemy: true,
+    maxHealth: 20,
+    maxHunger: 3000,
+    tracks: ['milo', 'carlos', 'ruth', 'raft'],
+    spawnInfo: []
+  },
   'rawMeat': {
     name: "Raw Meat",
     imageUrl: "rawMeat.png",
@@ -672,12 +710,9 @@ export const allCards: Record<CardSlug, CardType> = {
       <em>(Not in demo)</em>
     </div>
   },
-  "safeHarbor": {
-    name: "Safe Harbor",
-    imageUrl: "safeHarbor.jpg",
-    cardText: <div>
-      <em>Victory</em>
-      <em>You made it to the safe harbor</em>
-    </div>
+  'greatLog': {
+    name: "Great Log",
+    imageUrl: "greatLog.jpg",
+    destroyedByMonsoon: true,
   }
 }

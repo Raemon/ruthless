@@ -1,7 +1,7 @@
 import { CardSlug } from "./cards";
 import { SpawnInfo } from "./types";
 
-const ancientTreeLoot: CardSlug[] = ['vine', 'vine', 'vine', 'fallenLog', 'fallenLog', 'fallenLog', 'hatchet']
+const ancientTreeLoot: CardSlug[] = ['vine', 'vine', 'vine', 'greatLog', 'greatLog', 'greatLog', 'hatchet']
 
 export const characterSpawnInfo: SpawnInfo[] = [
   { inputStack: ['shoresidePath'], duration: 2500, descriptor: "Exploring...", preserve: true },
@@ -12,7 +12,7 @@ export const characterSpawnInfo: SpawnInfo[] = [
   { inputStack: ['ominousWaters'], duration: 2500, descriptor: "Exploring...", preserve: true},
   { inputStack: ['crate'], duration: 1000, descriptor: "Opening..." },
   { inputStack: ['rocks'], duration: 3000, descriptor: "Chipping..." },
-  { 
+{ 
     duration: 6000, 
     descriptor: "Building...", 
     inputStack: ['flint', 'fallenLog', 'sticks'], 
@@ -224,12 +224,6 @@ export const characterSpawnInfo: SpawnInfo[] = [
     descriptor: "Butchering...",
     output: ['rawMeat', 'rawMeat', 'rawMeat', 'hatchet'],
   },
-  { 
-    skipIfExists: ['raft', 'ideaRaft'], 
-    inputStack: ['milo'],
-    duration: 3000, preserve: true, descriptor: "Talking...", 
-    output: ['ideaRaft'] 
-  },
   {
     skipIfExists: ['ancientCalendar'],
     inputStack: ['mysteriousRuin'],
@@ -245,7 +239,22 @@ export const characterSpawnInfo: SpawnInfo[] = [
     skipIfExists: ['thinkingChair'],
     preserve: true,
   },
-  
+  { 
+    duration: 28000, 
+    descriptor: "Pondering...", 
+    inputStack: ['ideaShelter'], 
+    output: ["ideaCabin"],
+    skipIfExists: ['ideaCabin'],
+    preserve: true,
+  },
+  { 
+    duration: 28000, 
+    descriptor: "Pondering...", 
+    inputStack: ['ideaSpear', 'ideaRope'], 
+    output: ["ideaHarpoon"],
+    skipIfExists: ['ideaHarpoon'],
+    preserve: true,
+  },
 ]
 
 export const ruthSpawnInfo: SpawnInfo[] = [
@@ -255,6 +264,12 @@ export const ruthSpawnInfo: SpawnInfo[] = [
     inputStack: ['carlos'],
     duration: 3000, preserve: true, descriptor: "Talking...", 
     output: ['ideaFire'] 
+  },
+  { 
+    skipIfExists: ['raft', 'ideaRaft'], 
+    inputStack: ['milo'],
+    duration: 3000, preserve: true, descriptor: "Talking...", 
+    output: ['ideaRaft'] 
   },
   {
     duration: 30000,
@@ -327,6 +342,30 @@ export const miloSpawnInfo: SpawnInfo[] = [
     inputStack: ['hatchet', 'ancientTree'],
     output: [...ancientTreeLoot, 'miloUnsettlingFeeling']
   },
+  { 
+    duration: 6000, 
+    descriptor: "Pondering...", 
+    inputStack: ['ideaSpear', 'thinkingChair'], 
+    output: ["ideaHarpoon"],
+    skipIfExists: ['ideaHarpoon'],
+    preserve: true,
+  },
+  { 
+    duration: 6000, 
+    descriptor: "Pondering...", 
+    inputStack: ['ideaSpear', 'ideaRope', 'thinkingChair'], 
+    output: ["ideaHarpoon"],
+    skipIfExists: ['ideaHarpoon'],
+    preserve: true,
+  },
+  {
+    duration: 6000,
+    descriptor: "Talking...",
+    inputStack: ['carlos'],
+    output: ['ideaSpear'],
+    skipIfExists: ['ideaSpear'],
+    preserve: true,
+  },
   {
     duration: 6000,
     descriptor: "Thinking...",
@@ -370,16 +409,8 @@ export const miloSpawnInfo: SpawnInfo[] = [
 export const carlosSpawnInfo: SpawnInfo[] = [
   { 
     duration: 6000, 
-    descriptor: "Talking...", 
-    inputStack: ['smallFire', 'ruth'], 
-    output: ["ideaCabin"],
-    skipIfExists: ['ideaCabin'],
-    preserve: true,
-  },
-  { 
-    duration: 6000, 
-    descriptor: "Talking around fire...", 
-    inputStack: ['smallFire', 'ruth'], 
+    descriptor: '"What if it as less cramped...?"', 
+    inputStack: ['ideaShelter', 'ruth'], 
     output: ["ideaCabin"],
     skipIfExists: ['ideaCabin'],
     preserve: true,

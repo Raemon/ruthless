@@ -12,8 +12,8 @@ import { Statuses } from './Statuses/Statuses';
 import { CardDebugging } from './CardDebugging';
 import classNames from 'classnames';
 
-export const LARGE_CARD_WIDTH = 138
-export const LARGE_CARD_HEIGHT = 230
+export const LARGE_CARD_WIDTH = 130
+export const LARGE_CARD_HEIGHT = 220
 export const CARD_HEIGHT = 180;
 export const CARD_WIDTH = 110;
 export const IDEA_CARD_WIDTH = 120;
@@ -65,7 +65,9 @@ export const getCardBackground = (cardPosition: CardPosition, dayCount: number) 
 }
 
 export const getCardBorder = (cardPosition: CardPosition) => {
-  if (cardPosition.idea) {
+  if (cardPosition.attached.length) {
+    return "solid 1px rgba(0,0,0,1)"
+  } else if (cardPosition.idea) {
     return "dashed 2px rgba(0,0,0,.2)"
   } else if (cardPosition.enemy) {
     return "solid 3px rgba(200,0,0,1)"
