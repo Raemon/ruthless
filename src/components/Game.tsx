@@ -196,7 +196,7 @@ function Game() {
       </div>
       <SunDial dayCount={dayCount} setDayCount={setDayCount} />
       <div className={classes.reset} onClick={() => setCardPositions(initialCardPositions)}>New Game</div>
-      {latestCardPosition && <div className={classes.latestCard} 
+      {latestCardPosition && cardPositions[latestCardPosition.id] && <div className={classes.latestCard} 
         style={{
           right: CARD_WIDTH*2.5 + 56, 
           bottom: CARD_HEIGHT*2.5 + 60,
