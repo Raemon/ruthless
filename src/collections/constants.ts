@@ -9,7 +9,7 @@ export const gameTickMs = (ms: number) => ms / GAME_SPEED;
 
 // Season schedule. dayCount increments twice per calendar day (Day, Night),
 // see src/components/SunDial.tsx — so we convert to calendar days here.
-export const MONSOON_START_DAY = 1;
+export const MONSOON_START_DAY = 20;
 export const MONSOON_LENGTH_DAYS = 5;
 export const SUMMER_START_DAY = 40;
 export const DRY_SEASON_START_DAY = 60;
@@ -20,6 +20,11 @@ export const DAY_LENGTH_MS = gameTickMs(5 * 60 * 1000);
 // How often a gust hits, and how far each gust pushes a non-land card to the left.
 export const MONSOON_GUST_INTERVAL_MS = gameTickMs(1500);
 export const MONSOON_GUST_DISTANCE_PX = 20;
+// Per-gust randomness. Horizontal scale is in [1 - VARIANCE, 1 + VARIANCE]
+// (stays positive so gusts are always leftward overall). Vertical scale is in
+// [-DRIFT, +DRIFT], averaging zero so cards don't drift up or down over time.
+export const MONSOON_GUST_HORIZONTAL_VARIANCE = 0.4;
+export const MONSOON_GUST_VERTICAL_DRIFT = 0.3;
 
 // Default tick rate for stat decay (hunger, fuel, stamina, decay, temp).
 export const STAT_TICK_MS = gameTickMs(3000);

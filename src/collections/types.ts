@@ -54,7 +54,7 @@ export interface CardTypeBase {
   enemy?: boolean,
   glowing?: number,
   conceiving?: boolean,
-  destroyedByMonsoon?: boolean,
+  movedByMonsoon?: number,
   whileAttached?: (
     cardPositionInfo: CardPositionInfo
   ) => void

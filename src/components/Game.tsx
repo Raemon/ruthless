@@ -22,6 +22,9 @@ const getMapImage = (dayCount: number) =>
 const getInnerHaze = (dayCount: number) =>
   isMonsoon(dayCount) ? "rgba(60,80,100,.45)" : (isNight(dayCount) ? "rgba(200,210,220,.3)" : "rgba(220,210,200,.7)");
 
+const MAP_EDGE_FADE_PX = 200;
+const mapEdgeFadeMask = `linear-gradient(to right, transparent 0, black ${MAP_EDGE_FADE_PX}px, black calc(100% - ${MAP_EDGE_FADE_PX}px), transparent 100%), linear-gradient(to bottom, transparent 0, black ${MAP_EDGE_FADE_PX}px, black calc(100% - ${MAP_EDGE_FADE_PX}px), transparent 100%)`;
+
 const useStyles = createUseStyles({
   root: {
     backgroundSize: "cover !important", // TODO: figure out why this needs 'important'
@@ -48,8 +51,7 @@ const useStyles = createUseStyles({
   },
   map: {
     textAlign: 'center',
-    // backgroundColor: 'white',
-    // display: 'flex',
+    backgroundColor: 'rgba(255,255,255,.25)',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 'calc(10px + 2vmin)',
@@ -63,12 +65,16 @@ const useStyles = createUseStyles({
     '& *::-webkit-scrollbar': {
       display: 'none'
     },
-    overflow: 'hidden'
+    overflow: 'hidden',
+    maskImage: mapEdgeFadeMask,
+    maskComposite: 'intersect',
+    WebkitMaskImage: mapEdgeFadeMask,
+    WebkitMaskComposite: 'source-in',
   },
   style: {
     border: 'solid 1px rgba(0,0,0,.2)',
     boxShadow: '0 40px 40px 0 rgba(0,0,0,0)',
-    width: `calc(100vw - ${CARD_WIDTH*2.5+80}px)`,
+    width: `calc(100vw - 32px)`,
     height: `calc(100vh - 32px)`,
     position: "relative",
     top: '16px',
@@ -218,23 +224,6 @@ function Game() {
       <div className={classes.monsoonLabel} style={{opacity: monsoonActive ? 1 : 0}}>Monsoon Season</div>
       <SunDial dayCount={dayCount} setDayCount={setDayCount} />
       <div className={classes.reset} onClick={() => setCardPositions(initialCardPositions)}>New Game</div>
-      {latestCardPosition && cardPositions[latestCardPosition.id] && <div className={classes.latestCard} 
-        style={{
-          right: CARD_WIDTH*2.5 + 56, 
-          bottom: CARD_HEIGHT*2.5 + 60,
-          transform: `scale(${(CARD_WIDTH * 2.5) / getCardDimensions(latestCardPosition).width})`
-        }}>
-        <Card 
-          cardPositionInfo={{cardPositions, id: latestCardPosition.id, setCardPositions}} 
-          notDraggable={true} 
-          paused={paused} 
-          onDrag={onDrag} 
-          onStop={onStop} 
-          soundEnabled={soundEnabled} 
-          isDragging={isDragging} 
-          dayCount={dayCount} 
-        />
-      </div>}
     </div>
   );
 }

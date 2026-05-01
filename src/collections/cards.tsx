@@ -48,6 +48,7 @@ export const allCards: Record<CardSlug, CardType> = {
     name: 'Ruth',
     imageUrl: 'ruth.png',
     nightImageUrl: 'nightRuth.png',
+    movedByMonsoon: 0.25,
     maxHunger: 2000,
     maxStamina: 2000,
     maxTemp: 100,
@@ -62,6 +63,7 @@ export const allCards: Record<CardSlug, CardType> = {
   "carlos": {
     name: 'Carlos',
     imageUrl: 'carlos.png',
+    movedByMonsoon: 0.25,
     maxHunger: 2800,
     maxStamina: 2000,
     maxTemp: 100,
@@ -75,6 +77,7 @@ export const allCards: Record<CardSlug, CardType> = {
   'milo': {
     name: 'Milo',
     imageUrl: 'milo.png',
+    movedByMonsoon: 0.25,
     maxHunger: 2000,
     maxStamina: 2000,
     maxTemp: 100,
@@ -88,13 +91,13 @@ export const allCards: Record<CardSlug, CardType> = {
   'sticks': {
     name: "Sticks",
     imageUrl: 'sticks.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
     fuel: 100,
   },
   'longStick': {
     name: "Long Sticks",
     imageUrl: 'longStick.jpg',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
     fuel: 200,
   },
   'coconutTree': {
@@ -116,7 +119,7 @@ export const allCards: Record<CardSlug, CardType> = {
   'palmLeaves': {
     name: "Palm Leaves",
     imageUrl: 'palmLeaves.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'coconut': {
     name: "Coconut",
@@ -136,19 +139,19 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Fallen Log",
     imageUrl: 'fallenLog.png',
     fuel: 400,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'hewnLog': {
     name: "Hewn Logs",
     imageUrl: 'hewnLogs.png',
     fuel: 400,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'driftWoodLog': {
     name: "Driftwood Log",
     imageUrl: 'driftWoodLog.png',
     fuel: 500,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
 
   // Locations
@@ -217,7 +220,7 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Footprints",
     imageUrl: "footprints.png",
     loot: ['shelteredCove'],
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'carlosJungleFootprints': {
     name: "Carlos' Footprints",
@@ -238,23 +241,23 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Rock Pile",
     imageUrl: "rocks.png",
     loot: ['flint', 'flint', 'smallRoundStone'],
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'vine': {
     name: "Vine",
     imageUrl: "vine.png",
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'rope': {
     name: "Rope",
     imageUrl: "rope.png",
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'seaweed': {
     name: "Seaweed",
     imageUrl: "seaweed.png",
     calories: 100,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
     spawnInfo: [
       {
         duration: 3000,
@@ -270,30 +273,30 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Baked Seaweed",
     imageUrl: "bakedSeaweed.png",
     calories: 300,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'crate': {
     name: "Supply Crate",
     imageUrl: 'crate.png',
     loot: ['cannedBeans'],
     spawnDescriptor: "Opening...",
-    destroyedByMonsoon: true,
+    movedByMonsoon: .5,
   },
   'flint': {
     name: "Flint",
     imageUrl: 'flint.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: .5
   },
   'smallRoundStone': {
     name: "Small Stone",
     imageUrl: 'smalRoundStone.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: .25
   },
   'cannedBeans': {
     name: "Canned Beans",
     imageUrl: "cannedBeans.png",
     calories: 500,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'smallFire': {
     name: "Small Fire",
@@ -305,7 +308,7 @@ export const allCards: Record<CardSlug, CardType> = {
     rest: 300,
     glowing: 50,
     loot: ['ideaRaft'],
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'raft': {
     name: "Raft",
@@ -345,17 +348,17 @@ export const allCards: Record<CardSlug, CardType> = {
   'hatchet': {
     name: "Hatchet",
     imageUrl: 'hatchet.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'spear': {
     name: "Spear",
     imageUrl: 'spear.jpg',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'harpoon': {
     name: "Harpoon",
     imageUrl: 'harpoon.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'ideaSpear': {
     name: "Idea: Spear",
@@ -376,12 +379,12 @@ export const allCards: Record<CardSlug, CardType> = {
   'hammer': {
     name: "Hammer",
     imageUrl: 'hammer.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'workBench': {
     name: "Work Bench",
     imageUrl: 'crudeWorkbench.png',
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
 
   'shelter': {
@@ -389,7 +392,7 @@ export const allCards: Record<CardSlug, CardType> = {
     imageUrl: 'shelter.png',
     rest: 600,
     cardText: <div><em>Room for two, barely</em></div>,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
     spawnInfo: [
       {
         duration: 6000,
@@ -611,7 +614,7 @@ export const allCards: Record<CardSlug, CardType> = {
   'boarCarcass': {
     name: "Boar Carcass",
     backgroundImage: "boarCarcass.jpg",
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
   'circlingShark': {
     name: "Circling Shark",
@@ -626,7 +629,7 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Raw Meat",
     imageUrl: "rawMeat.png",
     calories: 300,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
     spawnInfo: [
       {
         duration: 3000,
@@ -642,7 +645,7 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Cooked Meat",
     imageUrl: "cookedMeat.png",
     calories: 800,
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   },
 
   'miloUnsettlingFeeling': {
@@ -714,6 +717,6 @@ export const allCards: Record<CardSlug, CardType> = {
   'greatLog': {
     name: "Great Log",
     imageUrl: "greatLog.jpg",
-    destroyedByMonsoon: true,
+    movedByMonsoon: 1,
   }
 }
