@@ -1,6 +1,7 @@
 import moment from "moment";
 import React, { useState, useEffect } from "react";
 import { createUseStyles } from "react-jss";
+import { DAY_LENGTH_MS } from "../collections/constants";
 
 const useStyles = createUseStyles({
   root: {
@@ -20,11 +21,9 @@ function SunDial({dayCount, setDayCount}:{dayCount: number, setDayCount: React.D
   const [lastUpdated, setLastUpdated] = useState(moment())
   const classes = useStyles();
 
-  const dayLength = 60 * 5 * 1000 // 5 minutes
-
   useEffect(() => {
     const interval = setInterval(() => {
-      if (countdown < dayLength) {
+      if (countdown < DAY_LENGTH_MS) {
         const now = moment();
         const timeDiff = now.diff(lastUpdated, 'milliseconds');
         setCountdown(prevTime => prevTime + timeDiff);
@@ -42,7 +41,7 @@ function SunDial({dayCount, setDayCount}:{dayCount: number, setDayCount: React.D
 
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
-  const offset = ((dayLength - countdown) / dayLength) * circumference;
+  const offset = ((DAY_LENGTH_MS - countdown) / DAY_LENGTH_MS) * circumference;
 
   const dayCountRemainder = dayCount % 2;
   const dayCountWhole = Math.floor(dayCount / 2);

@@ -8,11 +8,9 @@ import { startingCards } from '../collections/cards';
 import { createCardPosition } from '../collections/spawningUtils';
 import { useCardPositions } from '../collections/useCardPositions';
 import { CardPosition } from '../collections/types';
-import { CARD_HEIGHT, CARD_WIDTH, isMonsoon } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, DEBUGGING, isMonsoon } from '../collections/constants';
 import { useMonsoonWind } from '../collections/useMonsoonWind';
 import RainOverlay from './RainOverlay';
-
-export const debugging = false
 
 export function handleStart(event: DraggableEvent) {
   event.stopPropagation();
@@ -188,7 +186,7 @@ function Game() {
   return (
     <div className={classes.root} style={{background: `Url('${getMapImage(dayCount)}')`}}>
       {
-        debugging &&
+        DEBUGGING &&
         <div style={{position: "absolute", top: 0, left: 0, zIndex: 9999}}>
         <button onClick={() => setPaused(!paused)}>Pause</button>
         {/* <div>Mouse moved {new Date().getTime() - lastMouseMoved}ms ago</div> */}

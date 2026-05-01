@@ -3,7 +3,7 @@ import { CardPosition, CardPositionInfo } from "./types"
 import { CardSlug, allCards } from "./cards"
 import { filter, includes, some } from "lodash"
 import { getCardDimensions } from "../components/Card";
-import { CARD_HEIGHT, CARD_WIDTH, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
+import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
 
 export const randomHexId = () => {
   return Math.floor(Math.random() * 16777215).toString(16);
@@ -85,11 +85,10 @@ export const updateCardPosition = (
 function fitCardToScreen(x: number, y: number) {
   const screenWidth = window.innerWidth
   const screenHeight = window.innerHeight
-  const margin = 200
-  const maxX = screenWidth - CARD_WIDTH - margin
-  const maxY = screenHeight - CARD_HEIGHT - margin
-  const minX = margin
-  const minY = margin
+  const maxX = screenWidth - CARD_WIDTH - CARD_SCREEN_MARGIN_PX
+  const maxY = screenHeight - CARD_HEIGHT - CARD_SCREEN_MARGIN_PX
+  const minX = CARD_SCREEN_MARGIN_PX
+  const minY = CARD_SCREEN_MARGIN_PX
   const newX = Math.max(Math.min(x, maxX), minX)
   const newY = Math.max(Math.min(y, maxY), minY)
   // console.log({x, y, newX, newY, maxX, maxY, minX, minY})
@@ -124,7 +123,7 @@ function spawnNearby(cardPositions: Record<string, CardPosition>, slug: CardSlug
   return createCardPosition(cardPositions, slug, x, y)
 }
 
-function spawnInSemiCircle(cardPositions: Record<string, CardPosition>,  slug: CardSlug, parent: CardPosition, i = 0, radius = 50, angleIncrement: number = Math.PI / 5) {
+function spawnInSemiCircle(cardPositions: Record<string, CardPosition>,  slug: CardSlug, parent: CardPosition, i = 0, radius = SEMICIRCLE_SPAWN_RADIUS, angleIncrement: number = SEMICIRCLE_SPAWN_ANGLE_INCREMENT) {
   // Calculate the angle for the current card
   const angle = i * angleIncrement;
 
@@ -211,14 +210,15 @@ export function spawnTimerFromLoot({attachedSlug, duration, cardPositionInfo, pr
   const cardPosition = cardPositions[id]
   const attachedSlugs = cardPosition.attached.map(i => cardPositions[i].slug)
   const spawnSlug = getLoot(cardPositions, id, attachedSlug).spawnSlug
+  const scaledDuration = gameTickMs(duration)
   if (attachedSlugs.includes(attachedSlug) && !cardPosition.timerEnd && spawnSlug) {
-    const timerId = setTimeout(() => spawnFromLoot({attachedSlug, cardPositionInfo, preserve}), duration);
+    const timerId = setTimeout(() => spawnFromLoot({attachedSlug, cardPositionInfo, preserve}), scaledDuration);
     const attachedSpawnDescriptor = descriptor ?? allCards[attachedSlug].spawnDescriptor
     return updateCardPosition(cardPositionInfo, (cardPosition) => ({
       ...cardPosition, 
       timerId: timerId,
       timerStart: new Date(), 
-      timerEnd: new Date(Date.now() + duration),
+      timerEnd: new Date(Date.now() + scaledDuration),
       spawningStack: [spawnSlug],
       currentSpawnDescriptor: attachedSpawnDescriptor
    }))
@@ -307,14 +307,15 @@ export function spawnTimerFromSet({inputStack, duration, descriptor, skipIfExist
   const alreadySpawned = checkIfShouldSkip(cardPositions, skipIfExists)
 
   if (completeStack && !cardPosition.timerEnd && !alreadySpawned) {
-    const timerId = setTimeout(() => spawnFromSet({inputStack, duration, descriptor, skipIfExists, cardPositionInfo, ...props}), duration);
+    const scaledDuration = gameTickMs(duration)
+    const timerId = setTimeout(() => spawnFromSet({inputStack, duration, descriptor, skipIfExists, cardPositionInfo, ...props}), scaledDuration);
     setCardPositions(prevCardPositions => {
       const newCardPositions = {...prevCardPositions}
       newCardPositions[id] = ({
         ...cardPosition, 
         timerId: timerId,
         timerStart: new Date(), 
-        timerEnd: new Date(Date.now() + duration),
+        timerEnd: new Date(Date.now() + scaledDuration),
         spawningStack: inputStack,
         currentSpawnDescriptor: descriptor
       })
@@ -438,6 +439,7 @@ export function restoreTimer({duration, cardPositionInfo, currentAttribute, maxA
   const resourceAmount = attachedId && cardPositions[attachedId][resource]
   // TODO: restore timer is set repeatedly. 
   if (cardPosition[currentAttribute] && !cardPosition.timerEnd && resourceAmount && attachedId) {
+    const scaledDuration = gameTickMs(duration)
     const timerId = setTimeout(() => {
       restore({
         cardPositionInfo,
@@ -447,13 +449,13 @@ export function restoreTimer({duration, cardPositionInfo, currentAttribute, maxA
         attachedId,
         preserve,
       })
-    }, duration)
+    }, scaledDuration)
 
     return updateCardPosition(cardPositionInfo, (cardPosition) => ({
       ...cardPosition,
       timerId: timerId,
       timerStart: new Date(),
-      timerEnd: new Date(Date.now() + duration),
+      timerEnd: new Date(Date.now() + scaledDuration),
       currentSpawnDescriptor: descriptor,
       spawningStack: [cardPositions[attachedId].slug],
     }))

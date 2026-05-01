@@ -11,7 +11,7 @@ import { isNight } from './SunDial';
 import { Statuses } from './Statuses/Statuses';
 import { CardDebugging } from './CardDebugging';
 import classNames from 'classnames';
-import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, STACK_OFFSET_X, STACK_OFFSET_Y } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, PREGNANCY_TICK_MS, STACK_OFFSET_X, STACK_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS } from '../collections/constants';
 
 export const getCardDimensions = (card: CardPosition) => {
   if (card.large) {
@@ -169,7 +169,7 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, n
     whileAttachedCallback(cardPositionInfo)
   }, [cardPositionInfo]);
 
-  function updateAttribute ({currentAttribute, interval=3000, adjust= -1, max, min=0}:{currentAttribute: keyof CurrentCardAttriutes, interval?:number, adjust?: number, max?: number, min?: number} ) {
+  function updateAttribute ({currentAttribute, interval=STAT_TICK_MS, adjust= -1, max, min=0}:{currentAttribute: keyof CurrentCardAttriutes, interval?:number, adjust?: number, max?: number, min?: number} ) {
     setTimeout(() => {
       if (!cardPosition) return
       if (cardPosition[currentAttribute] === 0) {
@@ -233,12 +233,12 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, n
   }, [cardPositionInfo, cardPosition])
 
   const updateFading = useCallback(() => {
-    updateAttribute({currentAttribute: 'currentFading', interval:15})
+    updateAttribute({currentAttribute: 'currentFading', interval:FADING_TICK_MS})
   }, [cardPositionInfo, cardPosition])
 
   const updatePregnancy = useCallback(() => {
     if (cardPosition.currentPregnancy && cardPosition.currentPregnancy > 1) {
-      updateAttribute({currentAttribute: 'currentPregnancy', interval: 1000, adjust: +1})
+      updateAttribute({currentAttribute: 'currentPregnancy', interval: PREGNANCY_TICK_MS, adjust: +1})
     }
   }, [cardPositionInfo, cardPosition])
 
@@ -340,7 +340,7 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, n
           y: newY,
         }
       });
-    }, 3000);
+    }, TRACKING_TICK_MS);
   }, [trackedCardId, cardPosition.tracks, cardPosition.x, cardPosition.y])
 
   // const loot = cardPosition.loot && Object.values(cardPosition.loot).flatMap((item) => item)
