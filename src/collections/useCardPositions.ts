@@ -2,9 +2,7 @@ import { useState, useCallback } from 'react';
 import { DraggableData, DraggableEvent } from 'react-draggable';
 import { getCardDimensions } from '../components/Card';
 import { CardPosition } from './types';
-
-export const STACK_OFFSET_X = 10;
-export const STACK_OFFSET_Y = 30;
+import { STACK_OFFSET_X, STACK_OFFSET_Y } from './constants';
 
 function addIfNotInArray (array: string[], value: string): string[] {
   if (array.indexOf(value) === -1) {

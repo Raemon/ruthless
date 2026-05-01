@@ -6,20 +6,12 @@ import { allCards } from '../collections/cards';
 import { createCardPosition, deleteCard, getAttachedCardsWithHigherZIndex, updateCardPosition, whileAttached } from '../collections/spawningUtils';
 import CardTimer from './CardTimer';
 import { handleStart } from './Game';
-import { getNewCardPosition, isOverlapping, moveTowardsDestination, STACK_OFFSET_X, STACK_OFFSET_Y } from '../collections/useCardPositions';
+import { getNewCardPosition, isOverlapping, moveTowardsDestination } from '../collections/useCardPositions';
 import { isNight } from './SunDial';
 import { Statuses } from './Statuses/Statuses';
 import { CardDebugging } from './CardDebugging';
 import classNames from 'classnames';
-
-export const LARGE_CARD_WIDTH = 130
-export const LARGE_CARD_HEIGHT = 220
-export const CARD_HEIGHT = 180;
-export const CARD_WIDTH = 110;
-export const IDEA_CARD_WIDTH = 120;
-export const IDEA_CARD_HEIGHT = 190;
-
-const CHAR_BORDER_WIDTH = 5
+import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, STACK_OFFSET_X, STACK_OFFSET_Y } from '../collections/constants';
 
 export const getCardDimensions = (card: CardPosition) => {
   if (card.large) {

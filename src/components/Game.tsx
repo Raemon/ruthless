@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Card, { CARD_HEIGHT, CARD_WIDTH, getCardDimensions } from './Card';
+import Card, { getCardDimensions } from './Card';
 import { createUseStyles } from 'react-jss';
 import SunDial, { isNight } from './SunDial';
 import ScalingField from './ScalingField';
@@ -8,7 +8,7 @@ import { startingCards } from '../collections/cards';
 import { createCardPosition } from '../collections/spawningUtils';
 import { useCardPositions } from '../collections/useCardPositions';
 import { CardPosition } from '../collections/types';
-import { isMonsoon } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, isMonsoon } from '../collections/constants';
 import { useMonsoonWind } from '../collections/useMonsoonWind';
 import RainOverlay from './RainOverlay';
 

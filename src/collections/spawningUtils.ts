@@ -2,8 +2,8 @@ import sample from "lodash/sample"
 import { CardPosition, CardPositionInfo } from "./types"
 import { CardSlug, allCards } from "./cards"
 import { filter, includes, some } from "lodash"
-import { CARD_HEIGHT, CARD_WIDTH, getCardDimensions } from "../components/Card";
-import { STACK_OFFSET_X, STACK_OFFSET_Y } from "./useCardPositions";
+import { getCardDimensions } from "../components/Card";
+import { CARD_HEIGHT, CARD_WIDTH, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
 
 export const randomHexId = () => {
   return Math.floor(Math.random() * 16777215).toString(16);

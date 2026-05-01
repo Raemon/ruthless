@@ -9,6 +9,19 @@ export const DRY_SEASON_START_DAY = 60;
 export const MONSOON_GUST_INTERVAL_MS = 1500;
 export const MONSOON_GUST_DISTANCE_PX = 20;
 
+// Card dimensions in pixels.
+export const CARD_WIDTH = 110;
+export const CARD_HEIGHT = 180;
+export const LARGE_CARD_WIDTH = 130;
+export const LARGE_CARD_HEIGHT = 220;
+export const IDEA_CARD_WIDTH = 120;
+export const IDEA_CARD_HEIGHT = 190;
+export const CHAR_BORDER_WIDTH = 5;
+
+// How attached cards stack on top of one another.
+export const STACK_OFFSET_X = 10;
+export const STACK_OFFSET_Y = 30;
+
 export const dayCountToCalendarDay = (dayCount: number) => Math.floor(dayCount / 2);
 
 export const isMonsoon = (dayCount: number) => {
