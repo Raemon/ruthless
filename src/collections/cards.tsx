@@ -7,12 +7,12 @@ export const startingCards: CardSlug[] = [
   'ruth',
   'shoresidePath',
   'crate',
-  'sticks',
-  'coconutTree',
+  // 'sticks',
+  // 'coconutTree',
   // 'wildBoar',
   // 'ancientTree',
-  'cabin',
-  'shelter',
+  // 'cabin',
+  // 'shelter',
   // 'wildBoar',
   // 'milo',
   // 'carlos',
@@ -96,13 +96,19 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Sticks",
     imageUrl: 'sticks.png',
     movedByMonsoon: 2,
-    fuel: 100,
+    asAttached: {
+      duration: 1000, descriptor: "Fueling...",
+      effects: [{type: 'restoreInitiator', attr: 'currentFuel', amount: 100}],
+    },
   },
   'longStick': {
     name: "Long Sticks",
     imageUrl: 'longStick.jpg',
     movedByMonsoon: 1,
-    fuel: 200,
+    asAttached: {
+      duration: 1000, descriptor: "Fueling...",
+      effects: [{type: 'restoreInitiator', attr: 'currentFuel', amount: 200}],
+    },
   },
   'coconutTree': {
     name: "Coconut Tree",
@@ -132,30 +138,45 @@ export const allCards: Record<CardSlug, CardType> = {
   'openCoconut': {
     name: "Open Coconut",
     imageUrl: 'openCoconut.png',
-    calories: 1400,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 1400}],
+    },
   },
   'bananas': {
     name: "Bananas",
     imageUrl: 'bananas.png',
-    calories: 600,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 600}],
+    },
   },
   'fallenLog': {
     name: "Fallen Log",
     imageUrl: 'fallenLog.png',
-    fuel: 400,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Fueling...",
+      effects: [{type: 'restoreInitiator', attr: 'currentFuel', amount: 400}],
+    },
   },
   'hewnLog': {
     name: "Hewn Logs",
     imageUrl: 'hewnLogs.png',
-    fuel: 400,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Fueling...",
+      effects: [{type: 'restoreInitiator', attr: 'currentFuel', amount: 400}],
+    },
   },
   'driftWoodLog': {
     name: "Driftwood Log",
     imageUrl: 'driftWoodLog.png',
-    fuel: 500,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Fueling...",
+      effects: [{type: 'restoreInitiator', attr: 'currentFuel', amount: 500}],
+    },
   },
 
   // Locations
@@ -260,24 +281,32 @@ export const allCards: Record<CardSlug, CardType> = {
   'seaweed': {
     name: "Seaweed",
     imageUrl: "seaweed.png",
-    calories: 100,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 100}],
+    },
     spawnInfo: [
       {
         duration: 3000,
         descriptor: "Cooking...",
         inputStack: ['smallFire'],
-        output: ['bakedSeaweed'],
         preserve: true,
-        consumeInitiator: true
+        effects: [
+          {type: 'spawn', slugs: ['bakedSeaweed']},
+          {type: 'consumeInitiator'},
+        ],
       }
     ]
   },
   'bakedSeaweed': {
     name: "Baked Seaweed",
     imageUrl: "bakedSeaweed.png",
-    calories: 300,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 300}],
+    },
   },
   'crate': {
     name: "Supply Crate",
@@ -299,8 +328,11 @@ export const allCards: Record<CardSlug, CardType> = {
   'cannedBeans': {
     name: "Canned Beans",
     imageUrl: "cannedBeans.png",
-    calories: 500,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 500}],
+    },
   },
   'smallFire': {
     name: "Small Fire",
@@ -308,11 +340,19 @@ export const allCards: Record<CardSlug, CardType> = {
     creatingDescriptor: "Building...",
     spawnDescriptor: "Cooking...",
     maxFuel: 1000,
-    heat: 25,
-    rest: 300,
     glowing: 50,
     loot: ['ideaRaft'],
     movedByMonsoon: .2,
+    // One recipe carrying both effects — this is the bug fix the new
+    // system enables. The old implicit chain could only run heat OR rest,
+    // never both.
+    asAttached: {
+      duration: 6000, descriptor: "Warming...", preserve: true,
+      effects: [
+        {type: 'restoreInitiator', attr: 'currentTemp', amount: 50},
+        {type: 'restoreInitiator', attr: 'currentStamina', amount: 300},
+      ],
+    },
   },
   'raft': {
     name: "Raft",
@@ -395,17 +435,20 @@ export const allCards: Record<CardSlug, CardType> = {
   'shelter': {
     name: "Small Shelter",
     imageUrl: 'shelter.png',
-    rest: 600,
     cardText: <div><em>Room for two, barely</em></div>,
     movedByMonsoon: .01,
+    asAttached: {
+      duration: 6000, descriptor: "Resting...", preserve: true,
+      effects: [{type: 'restoreInitiator', attr: 'currentStamina', amount: 600}],
+    },
     spawnInfo: [
       {
         duration: 6000,
         descriptor: "Awkwardly resting...",
         inputStack: ['carlos', 'ruth'],
-        output: ['sexualTensionCarlosRuth'],
         skipIfExists: ['sexualTensionCarlosRuth', 'loveCarlosRuth'],
         preserve: true,
+        effects: [{type: 'spawn', slugs: ['sexualTensionCarlosRuth']}],
       }
       // {
       //   duration: 6000,
@@ -421,8 +464,11 @@ export const allCards: Record<CardSlug, CardType> = {
   'cabin': {
     name: "Cabin",
     backgroundImage: 'cabin.jpg',
-    rest: 1200,
     cardText: <div><em>A cozy home for a family</em></div>,
+    asAttached: {
+      duration: 6000, descriptor: "Resting...", preserve: true,
+      effects: [{type: 'restoreInitiator', attr: 'currentStamina', amount: 1200}],
+    },
   },
 
   'jungleShrine': {
@@ -455,7 +501,7 @@ export const allCards: Record<CardSlug, CardType> = {
     name: "Idea: Rope",
     imageUrl: 'ideaRope.png',
     idea: true,
-    cardText: <div>3 Vines</div>
+    cardText: <div>A Character, 3 Vines</div>
   },
   'ideaRaft': {
     name: 'Idea: Raft',
@@ -472,7 +518,7 @@ export const allCards: Record<CardSlug, CardType> = {
     large: true,
     cardText: <div>
       <p><em>Need to get out of here...</em></p>
-      <div>Raft, Sheltered Cove</div>
+      <div>A Character, Raft, Sheltered Cove</div>
     </div>
   },
   'ideaThinkingChair': {
@@ -641,24 +687,32 @@ export const allCards: Record<CardSlug, CardType> = {
   'rawMeat': {
     name: "Raw Meat",
     imageUrl: "rawMeat.png",
-    calories: 300,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 300}],
+    },
     spawnInfo: [
       {
         duration: 3000,
         descriptor: "Cooking...",
         inputStack: ['smallFire'],
-        output: ['cookedMeat'],
         preserve: true,
-        consumeInitiator: true
+        effects: [
+          {type: 'spawn', slugs: ['cookedMeat']},
+          {type: 'consumeInitiator'},
+        ],
       }
     ]
   },
   'cookedMeat': {
     name: "Cooked Meat",
     imageUrl: "cookedMeat.png",
-    calories: 800,
     movedByMonsoon: 1,
+    asAttached: {
+      duration: 1000, descriptor: "Eating...",
+      effects: [{type: 'restoreInitiator', attr: 'currentHunger', amount: 800}],
+    },
   },
 
   'miloUnsettlingFeeling': {

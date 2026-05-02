@@ -1,7 +1,7 @@
 import sample from "lodash/sample"
-import { CardPosition, CardPositionInfo } from "./types"
+import { CardPosition, CardPositionInfo, CurrentCardAttriutes, Effect, MaxCardAttributes, Recipe } from "./types"
 import { CardSlug, allCards } from "./cards"
-import { filter, includes, some } from "lodash"
+import { includes, some } from "lodash"
 import { getCardDimensions } from "../components/Card";
 import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
 
@@ -205,17 +205,6 @@ function spawnInSemiCircle(cardPositions: Record<string, CardPosition>,  slug: C
   return createCardPosition(cardPositions, slug, x, y);
 }
 
-function getLoot (cardPositions: Record<string, CardPosition>, index: string, slug: CardSlug) {
-  const cardPosition = cardPositions[index]
-  const attachedId = cardPosition.attached.find(i => cardPositions[i].slug === slug)
-  const loot = typeof attachedId === "string" && cardPositions[attachedId].loot
-  const lootStack = loot && filter(loot, (lootStack) => lootStack.length > 0 )
-
-  const spawnSlug = lootStack && sample(lootStack)
-
-  return { spawnSlug, attachedId }
-}
-
 const removeOneInstance = (arr: CardSlug[], itemToRemove: CardSlug) => {
   const index = arr.indexOf(itemToRemove);
   if (index !== -1) {
@@ -224,13 +213,19 @@ const removeOneInstance = (arr: CardSlug[], itemToRemove: CardSlug) => {
   return arr;
 };
 
-function popOffCard(cardPositionInfo: CardPositionInfo) {
+// Visual "pop" of the initiator card after a recipe completes — clears
+// attached/timer fields. The withVisualOffset flag controls whether the
+// initiator also slides away (used when the recipe spawns new cards so
+// the initiator doesn't sit right on top of them); restore-only recipes
+// like eating/warming/resting pass false to leave the character in place.
+function popOffCard(cardPositionInfo: CardPositionInfo, withVisualOffset = true) {
   const { cardPositions, id } = cardPositionInfo
+  const card = cardPositions[id]
   return {
-    ...cardPositions[id],
+    ...card,
     attached: [],
-    x: Math.round(cardPositions[id].x - 50 - Math.random() * 50),
-    y: Math.round(cardPositions[id].y + 15 + Math.random() * 50),
+    x: withVisualOffset ? Math.round(card.x - 50 - Math.random() * 50) : card.x,
+    y: withVisualOffset ? Math.round(card.y + 15 + Math.random() * 50) : card.y,
     timerEnd: undefined,
     timerStart: undefined,
     timerId: undefined,
@@ -273,126 +268,6 @@ function areArraysIdentical<T>(arr1: T[], arr2: T[]): boolean {
   return true;
 }
 
-export function spawnTimerFromLoot({attachedSlug, duration, cardPositionInfo, preserve, descriptor}:{attachedSlug: CardSlug, duration: number, cardPositionInfo: CardPositionInfo, preserve?: boolean, descriptor?: string}) {
-  const { cardPositions, id } = cardPositionInfo
-  const cardPosition = cardPositions[id]
-  const attachedSlugs = cardPosition.attached.map(i => cardPositions[i].slug)
-  const spawnSlug = getLoot(cardPositions, id, attachedSlug).spawnSlug
-  const scaledDuration = gameTickMs(duration)
-  if (attachedSlugs.includes(attachedSlug) && !cardPosition.timerEnd && spawnSlug) {
-    const timerId = setTimeout(() => spawnFromLoot({attachedSlug, cardPositionInfo, preserve}), scaledDuration);
-    const attachedSpawnDescriptor = descriptor ?? allCards[attachedSlug].spawnDescriptor
-    return updateCardPosition(cardPositionInfo, (cardPosition) => ({
-      ...cardPosition, 
-      timerId: timerId,
-      timerStart: new Date(), 
-      timerEnd: new Date(Date.now() + scaledDuration),
-      spawningStack: [spawnSlug],
-      currentSpawnDescriptor: attachedSpawnDescriptor
-   }))
-  }
-  return cardPositionInfo
-}
-
-export function spawnFromLoot({attachedSlug, cardPositionInfo, preserve}:{attachedSlug: CardSlug, cardPositionInfo: CardPositionInfo, preserve?: boolean, output?: CardSlug|CardSlug[]}) {
-  const { cardPositions, id, setCardPositions } = cardPositionInfo
-  const cardPosition = cardPositions[id]
-  if (!cardPositions[id]) return
-  setCardPositions(prevCardPositions => {
-    const { spawnSlug, attachedId } = getLoot(prevCardPositions, id, attachedSlug)
-
-    if (spawnSlug && attachedId) {
-      const newCardPositions = {...prevCardPositions}
-
-      const oldAttached = cardPositions[attachedId]
-      const oldSpawnItems = [...(oldAttached.loot ?? [])]
-      let newSpawnItems = removeOneInstance(oldSpawnItems, spawnSlug)
-      let secondaryLoot = oldAttached.secondaryLoot ?? []
-      newCardPositions[id] = popOffCard(cardPositionInfo)
-
-      const newCardPosition = spawnNearby(newCardPositions, spawnSlug, cardPosition)
-      newCardPositions[newCardPosition.id] = newCardPosition
-
-      // If there are no more items to spawn, add the secondary loot
-      if (newSpawnItems.length === 0 && secondaryLoot.length > 0) {
-        newSpawnItems = secondaryLoot
-        secondaryLoot = []
-      }
-
-      newCardPositions[attachedId] = {
-      ...cardPositions[attachedId],
-        loot: newSpawnItems,
-        secondaryLoot
-      }
-
-      // If there are no more items to spawn even , remove the attached card
-      
-      if (newSpawnItems.length === 0 && !preserve) {
-        deleteCard(newCardPositions, attachedId)
-      }
-      return newCardPositions;
-    } else {
-      return prevCardPositions;
-    }
-  })
-}
-
-function checkIfShouldSkip(cardPositions: Record<string, CardPosition>, skipIfExists?: CardSlug[]) {
-  if (!skipIfExists) return false
-  const allSlugs = Object.values(cardPositions).map(cardPosition => cardPosition.slug)
-  return some(skipIfExists, function(item) {
-    return includes(allSlugs, item);
-  });
-}
-
-type SpawnProps = {
-  inputStack: CardSlug[], 
-  output: CardSlug[], 
-  attachedOutput?: CardSlug[],
-  duration: number, 
-  cardPositionInfo: CardPositionInfo, 
-  descriptor: string,
-  skipIfExists?: CardSlug[]
-  preserve?: boolean,
-  consumeInitiator?: boolean,
-  damage?: number, 
-  conceiving?: boolean, 
-  consumeStack?: CardSlug[],
-  stamina?: number,
-  fuel?: number,
-  calories?: number,
-  rest?: number,
-  heat?: number,
-}
-
-export function spawnTimerFromSet({inputStack, duration, descriptor, skipIfExists, cardPositionInfo, ...props}:SpawnProps) {
-  const { cardPositions, id, setCardPositions } = cardPositionInfo
-  const cardPosition = cardPositions[id] 
-  const attachedSlugs = cardPosition.attached.map(i => cardPositions[i].slug)
-
-  const completeStack = areArraysIdentical(attachedSlugs, inputStack)
-
-  const alreadySpawned = checkIfShouldSkip(cardPositions, skipIfExists)
-
-  if (completeStack && !cardPosition.timerEnd && !alreadySpawned) {
-    const scaledDuration = gameTickMs(duration)
-    const timerId = setTimeout(() => spawnFromSet({inputStack, duration, descriptor, skipIfExists, cardPositionInfo, ...props}), scaledDuration);
-    setCardPositions(prevCardPositions => {
-      const newCardPositions = {...prevCardPositions}
-      newCardPositions[id] = ({
-        ...cardPosition, 
-        timerId: timerId,
-        timerStart: new Date(), 
-        timerEnd: new Date(Date.now() + scaledDuration),
-        spawningStack: inputStack,
-        currentSpawnDescriptor: descriptor
-      })
-      return newCardPositions;
-    })
-  }
-  return false
-}
-
 export function deleteCard(cardPositions: Record<string, CardPosition>, id: string) {
   const cardPosition = cardPositions[id];
   if (!cardPosition) return;
@@ -416,228 +291,275 @@ export function deleteCard(cardPositions: Record<string, CardPosition>, id: stri
   delete cardPositions[id];
 }
 
-export function spawnFromSet({inputStack, output, attachedOutput, cardPositionInfo, preserve, consumeInitiator, damage, conceiving, consumeStack, stamina, heat}:SpawnProps) {
-  const { cardPositions, id, setCardPositions } = cardPositionInfo
-  if (!cardPositions[id]) return
+// === Recipe matching ===
+
+function checkIfShouldSkip(cardPositions: Record<string, CardPosition>, skipIfExists?: CardSlug[]) {
+  if (!skipIfExists) return false
+  const allSlugs = Object.values(cardPositions).map(cardPosition => cardPosition.slug)
+  return some(skipIfExists, function(item) {
+    return includes(allSlugs, item);
+  });
+}
+
+// asAttached recipe applies only if every restoreInitiator effect targets a
+// stat the initiator actually has. Stops sticks from being "fueled" into a
+// character (no currentFuel) or food being "eaten" by a crate.
+function asAttachedApplies(recipe: Recipe, initiator: CardPosition): boolean {
+  return recipe.effects.every(effect => {
+    if (effect.type === 'restoreInitiator') {
+      return typeof initiator[effect.attr] === 'number'
+    }
+    return true
+  })
+}
+
+// Maps each current* stat to its corresponding max* stat for capping during
+// restoreInitiator. Listed explicitly so a typo in the Effect's `attr`
+// becomes a TypeScript error rather than a silent runtime miscap.
+const MAX_ATTR_FOR_CURRENT: Record<keyof CurrentCardAttriutes, keyof MaxCardAttributes> = {
+  currentHunger: 'maxHunger',
+  currentHealth: 'maxHealth',
+  currentFuel: 'maxFuel',
+  currentStamina: 'maxStamina',
+  currentFading: 'maxFading',
+  currentDecay: 'maxDecay',
+  currentTemp: 'maxTemp',
+  currentPregnancy: 'maxPregnancy',
+}
+
+// === Recipe execution ===
+
+// Set the initiator's timer fields and queue applyRecipe to run when the
+// timer expires. The setCardPositions call here is what makes the
+// "Cooking..." / "Building..." / "Warming..." progress bar visible.
+function startRecipeTimer(recipe: Recipe, cardPositionInfo: CardPositionInfo, attachedIds: string[]) {
+  const { id, setCardPositions } = cardPositionInfo
+  const scaledDuration = gameTickMs(recipe.duration)
+  const timerId = setTimeout(() => applyRecipe(recipe, cardPositionInfo, attachedIds), scaledDuration)
 
   setCardPositions(prevCardPositions => {
+    const cardPosition = prevCardPositions[id]
+    if (!cardPosition) return prevCardPositions
+    const attachedSlugs = attachedIds
+      .map(aid => prevCardPositions[aid]?.slug)
+      .filter(Boolean) as CardSlug[]
     const newCardPositions = {...prevCardPositions}
-    const cardPosition = newCardPositions[cardPositionInfo.id]
-    const newCardPositionInfo = { ...cardPositionInfo, cardPositions: newCardPositions }
-    if (!cardPosition) return newCardPositions // TODO: unclear if this is the solution or just a hack
-    const attachedSlugs = cardPosition.attached.map(i => newCardPositions[i].slug)
-    if (areArraysIdentical(attachedSlugs, inputStack)) {
-      newCardPositions[id] = popOffCard(newCardPositionInfo)
-
-      // create the output card
-
-      console.log({cardPositionInfo, stamina, heat})
-      
-
-      const soFarOutput: CardPosition[] = []
-      output.forEach((outputSlug) => {
-        const newCardPosition = spawnNearby(newCardPositions, outputSlug, cardPosition, soFarOutput)
-        soFarOutput.push(newCardPosition)
-        newCardPositions[newCardPosition.id] = newCardPosition
-      })
-      attachedOutput?.forEach((slug) => {
-        const newCardPosition = spawnNearby(newCardPositions, slug, cardPosition)
-
-        // attach the output card to the initiator
-        newCardPositions[newCardPosition.id] = newCardPosition
-        newCardPosition.x = newCardPositions[id].x + STACK_OFFSET_X
-        newCardPosition.y = newCardPositions[id].y + STACK_OFFSET_Y
-        newCardPosition.zIndex = newCardPositions[id].zIndex + 1
-        newCardPosition.attached = [id]
-        newCardPositions[id].attached.push(newCardPosition.id)
-      })
-
-      const attachedCardPositions = cardPosition.attached.map(i => newCardPositions[i])
-      const attachedCardsInStack = attachedCardPositions.filter(attachedCardPosition => inputStack.includes(attachedCardPosition.slug))
-      // destroy the attached cards
-      if (!preserve) {
-        attachedCardsInStack.forEach(attachedCardPosition => {
-          deleteCard(newCardPositions, attachedCardPosition.id)
-        })
-      }
-      if (consumeInitiator) {
-        deleteCard(newCardPositions, id)
-      }
-      if (consumeStack) {
-        consumeStack.forEach(consumed => {
-          const consumeFromStackId = attachedCardsInStack.find(attachedCardPosition => attachedCardPosition.slug === consumed)?.id
-          if (consumeFromStackId) {
-            deleteCard(newCardPositions, consumeFromStackId)
-          }
-        })
-      }
-      const health = cardPosition.currentHealth
-      if (damage && health) {
-        newCardPositions[id].currentHealth = Math.max(health - damage, 0)
-      }
-      if (conceiving && typeof cardPosition.currentPregnancy === "number") {
-        newCardPositions[id].currentPregnancy = 2;
-      }
-      if (typeof newCardPositions[id]?.currentStamina === "number" && typeof stamina === "number") {
-        const staminaValue = newCardPositions[id].currentStamina as number // the typing is confused here and I don't know why
-        newCardPositions[id].currentStamina = staminaValue + stamina
-      }
-      if (typeof newCardPositions[id]?.currentTemp === "number" && typeof heat === "number") {
-        const temp = newCardPositions[id].currentTemp as number
-        newCardPositions[id].currentTemp = temp + heat
-      }
+    newCardPositions[id] = {
+      ...cardPosition,
+      timerId,
+      timerStart: new Date(),
+      timerEnd: new Date(Date.now() + scaledDuration),
+      spawningStack: attachedSlugs,
+      currentSpawnDescriptor: recipe.descriptor,
     }
     return newCardPositions
   })
 }
 
-export function restoreTimer({duration, cardPositionInfo, currentAttribute, maxAttribute, resource, preserve, descriptor}:{
-  duration: number, 
-  cardPositionInfo: 
-  CardPositionInfo, 
-  currentAttribute: "currentHunger"|"currentFuel"|"currentStamina"|"currentTemp",
-  maxAttribute: "maxHunger"|"maxFuel"|"maxStamina"|"maxTemp",
-  resource: "calories"|"fuel"|"rest"|"heat",
-  preserve?: boolean,
-  descriptor?: string
-}) {
-  const { cardPositions, id } = cardPositionInfo
-  const cardPosition = cardPositions[id]
-  const attachedId = cardPosition.attached.find(i => cardPositions[i][resource])
-  const resourceAmount = attachedId && cardPositions[attachedId][resource]
-  // TODO: restore timer is set repeatedly. 
-  if (cardPosition[currentAttribute] && !cardPosition.timerEnd && resourceAmount && attachedId) {
-    const scaledDuration = gameTickMs(duration)
-    const timerId = setTimeout(() => {
-      restore({
-        cardPositionInfo,
-        currentAttribute, 
-        maxAttribute,
-        resourceAmount, 
-        attachedId,
-        preserve,
-      })
-    }, scaledDuration)
+// Apply all of a Recipe's effects atomically inside one setCardPositions
+// call. Re-validates the attachment state because the user may have ripped
+// off an attached card during the timer.
+function applyRecipe(recipe: Recipe, cardPositionInfo: CardPositionInfo, attachedIds: string[]) {
+  const { id, setCardPositions } = cardPositionInfo
+  setCardPositions(prevCardPositions => {
+    const initiator = prevCardPositions[id]
+    if (!initiator) return prevCardPositions
 
-    return updateCardPosition(cardPositionInfo, (cardPosition) => ({
-      ...cardPosition,
-      timerId: timerId,
-      timerStart: new Date(),
-      timerEnd: new Date(Date.now() + scaledDuration),
-      currentSpawnDescriptor: descriptor,
-      spawningStack: [cardPositions[attachedId].slug],
-    }))
-  }
-  return cardPositionInfo
-}
+    // Re-validate: every captured attachedId must still be attached to the
+    // initiator (and no extras). Mirrors the pre-fire check that
+    // spawnFromSet/spawnFromLoot used to do via areArraysIdentical.
+    const stillAttached = areArraysIdentical([...initiator.attached], [...attachedIds])
+    if (!stillAttached) return prevCardPositions
 
-function restore({cardPositionInfo, resourceAmount, currentAttribute, maxAttribute, attachedId, preserve}:{
-  cardPositionInfo: CardPositionInfo, 
-  resourceAmount: number, 
-  currentAttribute: "currentHunger"|"currentFuel"|"currentStamina"|"currentTemp",
-  maxAttribute: "maxHunger"|"maxFuel"|"maxStamina"|"maxTemp",
-  attachedId: string,
-  preserve?: boolean,
-}) {
-  const { cardPositions, id, setCardPositions } = cardPositionInfo;
-  if (!cardPositions[id]) return
-  setCardPositions((prevCardPositions: Record<string, CardPosition>) => {
     const newCardPositions = {...prevCardPositions}
-    const cardPosition = newCardPositions[id];
-    const currentAttributeAmount = cardPosition[currentAttribute];
 
-    if (currentAttributeAmount && resourceAmount) {
-      // Update the current card position.
-      newCardPositions[id] = {
-        ...cardPosition,
-        timerId: undefined,
-        timerStart: undefined,
-        timerEnd: undefined,
-        currentSpawnDescriptor: undefined,
-        attached: [],
-        spawningStack: undefined,
-        [currentAttribute]: Math.min(currentAttributeAmount + resourceAmount, (cardPosition[maxAttribute] ?? 0)),
-      };
+    // Restore-only recipes (no spawn-style effects) leave the initiator in
+    // place so warming/eating/resting doesn't visually slide the character.
+    const recipeSpawnsCards = recipe.effects.some(effect =>
+      effect.type === 'spawn' ||
+      effect.type === 'spawnAttachedToInitiator' ||
+      effect.type === 'drawLootFromAttached'
+    )
+    newCardPositions[id] = popOffCard(
+      {...cardPositionInfo, cardPositions: newCardPositions},
+      recipeSpawnsCards
+    )
 
-      if (!preserve) {
-        deleteCard(newCardPositions, attachedId)
-      }
+    recipe.effects.forEach(effect => {
+      applyEffect(effect, newCardPositions, id, attachedIds)
+    })
+
+    // Default consumption: stack cards are deleted unless `preserve` is set.
+    // Exception: drawLootFromAttached is responsible for its own consumption
+    // semantics — only delete when the loot pool has fully exhausted, so
+    // crates/rocks survive until empty.
+    if (!recipe.preserve) {
+      const recipeDrewLoot = recipe.effects.some(effect => effect.type === 'drawLootFromAttached')
+      attachedIds.forEach(aid => {
+        const card = newCardPositions[aid]
+        if (!card) return
+        if (recipeDrewLoot) {
+          const lootRemaining = (card.loot?.length ?? 0) > 0
+          if (lootRemaining) return
+        }
+        deleteCard(newCardPositions, aid)
+      })
     }
 
-    return newCardPositions;
-  });
+    return newCardPositions
+  })
 }
 
-export function whileAttached (cardPositionInfo: CardPositionInfo) {
-  const { cardPositions, id } = cardPositionInfo
-  const spawnInfo = cardPositions[id].spawnInfo
-  const cardPosition = cardPositions[id]
-  if (!spawnInfo) return
-
-  const attachedSlugs = cardPosition.attached.map(i => {
-    if (cardPositions[i]) {
-      return cardPositions[i].slug
+function applyEffect(effect: Effect, cardPositions: Record<string, CardPosition>, initiatorId: string, attachedIds: string[]) {
+  switch (effect.type) {
+    case 'spawn': {
+      const initiator = cardPositions[initiatorId]
+      if (!initiator) return
+      const soFar: CardPosition[] = []
+      effect.slugs.forEach(slug => {
+        const newCard = spawnNearby(cardPositions, slug, initiator, soFar)
+        soFar.push(newCard)
+        cardPositions[newCard.id] = newCard
+      })
+      return
     }
-  })
-  if (!attachedSlugs) return
-  const attachedCard = cardPositions[cardPosition.attached[0]]
-
-  if (attachedCard) {
-    let anySpawn = false
-    spawnInfo.forEach(({inputStack, duration, output, skipIfExists, ...props}) => {
-      const inputEqualsAttached = inputStack && areArraysIdentical(inputStack, attachedSlugs)
-      if (inputEqualsAttached) {
-        const attachedSlugs = cardPositions[id].attached.map(i => cardPositions[i].slug)
-        const inputEqualsAttached = inputStack && areArraysIdentical(inputStack, attachedSlugs)
-        if (inputEqualsAttached && output) {
-           anySpawn = !checkIfShouldSkip(cardPositions, skipIfExists)
-           spawnTimerFromSet({inputStack, duration, output, skipIfExists, cardPositionInfo, ...props})
-        } else if (duration && attachedSlugs.length === 1) {  
-          anySpawn = !  checkIfShouldSkip(cardPositions, skipIfExists)
-          spawnTimerFromLoot({attachedSlug: inputStack[0], duration, cardPositionInfo, ...props})
+    case 'spawnAttachedToInitiator': {
+      const initiator = cardPositions[initiatorId]
+      if (!initiator) return
+      effect.slugs.forEach(slug => {
+        const newCard = spawnNearby(cardPositions, slug, initiator)
+        cardPositions[newCard.id] = newCard
+        const stillThere = cardPositions[initiatorId]
+        if (!stillThere) return
+        newCard.x = stillThere.x + STACK_OFFSET_X
+        newCard.y = stillThere.y + STACK_OFFSET_Y
+        newCard.zIndex = stillThere.zIndex + 1
+        newCard.attached = [initiatorId]
+        stillThere.attached.push(newCard.id)
+      })
+      return
+    }
+    case 'restoreInitiator': {
+      const initiator = cardPositions[initiatorId]
+      if (!initiator) return
+      const cur = initiator[effect.attr]
+      if (typeof cur !== 'number') return
+      const maxKey = MAX_ATTR_FOR_CURRENT[effect.attr]
+      const max = initiator[maxKey]
+      const cap = typeof max === 'number' ? max : Infinity
+      cardPositions[initiatorId] = {
+        ...initiator,
+        [effect.attr]: Math.min(cur + effect.amount, cap),
+      }
+      return
+    }
+    case 'damageInitiator': {
+      const initiator = cardPositions[initiatorId]
+      if (!initiator) return
+      const health = initiator.currentHealth
+      if (typeof health !== 'number') return
+      cardPositions[initiatorId] = {
+        ...initiator,
+        currentHealth: Math.max(health - effect.amount, 0),
+      }
+      return
+    }
+    case 'consumeInitiator': {
+      deleteCard(cardPositions, initiatorId)
+      return
+    }
+    case 'consumeStack': {
+      attachedIds.forEach(aid => {
+        const card = cardPositions[aid]
+        if (!card) return
+        if (effect.slugs && !effect.slugs.includes(card.slug)) return
+        deleteCard(cardPositions, aid)
+      })
+      return
+    }
+    case 'conceiveInitiator': {
+      const initiator = cardPositions[initiatorId]
+      if (!initiator) return
+      if (typeof initiator.currentPregnancy === 'number') {
+        cardPositions[initiatorId] = {
+          ...initiator,
+          currentPregnancy: 2,
         }
       }
-     }) 
-     if (!anySpawn) {
-      if (attachedCard?.calories) {
-        restoreTimer({
-          duration: 1000, 
-          cardPositionInfo, 
-          resource: "calories", 
-          currentAttribute: "currentHunger",
-          maxAttribute: "maxHunger",
-          descriptor: "Eating..."
-        })
-      } else if (attachedCard.fuel) {
-        restoreTimer({
-          duration:1000, 
-          cardPositionInfo, 
-          resource: "fuel", 
-          currentAttribute: "currentFuel",
-          maxAttribute: "maxFuel",
-          descriptor: "Fueling..."
-        })
-      } else if (attachedCard.rest) {
-        restoreTimer({
-          duration:6000, 
-          cardPositionInfo, 
-          resource: "rest", 
-          currentAttribute: "currentStamina",
-          maxAttribute: "maxStamina",
-          preserve: true,
-          descriptor: "Resting..."
-        })
-      } else if (attachedCard.heat) {
-        restoreTimer({
-          duration:6000, 
-          cardPositionInfo, 
-          resource: "heat", 
-          currentAttribute: "currentTemp",
-          maxAttribute: "maxTemp",
-          preserve: true,
-          descriptor: "Warming..."
-        })
+      return
+    }
+    case 'drawLootFromAttached': {
+      // Only the first attached card contributes loot — all current loot
+      // recipes have inputStack: [singleCard], and asAttached only fires
+      // on a single attached card.
+      const attachedId = attachedIds[0]
+      if (!attachedId) return
+      const attached = cardPositions[attachedId]
+      if (!attached) return
+      const currentLoot = attached.loot ?? []
+      if (currentLoot.length === 0) return
+      const spawnSlug = sample(currentLoot)
+      if (!spawnSlug) return
+
+      const initiator = cardPositions[initiatorId]
+      if (initiator) {
+        const newCard = spawnNearby(cardPositions, spawnSlug, initiator)
+        cardPositions[newCard.id] = newCard
       }
+
+      // Drop the drawn slug from the loot pool, then promote secondaryLoot
+      // into loot if loot just emptied (matches the old two-phase loot
+      // system: phase 1 = `loot`, phase 2 = `secondaryLoot`).
+      const remainingLoot = removeOneInstance([...currentLoot], spawnSlug)
+      let nextLoot = remainingLoot
+      let nextSecondary = attached.secondaryLoot ?? []
+      if (nextLoot.length === 0 && nextSecondary.length > 0) {
+        nextLoot = nextSecondary
+        nextSecondary = []
+      }
+      cardPositions[attachedId] = {
+        ...cardPositions[attachedId],
+        loot: nextLoot,
+        secondaryLoot: nextSecondary,
+      }
+      return
     }
   }
+}
+
+// === whileAttached: pick and run one Recipe per attachment ===
+
+export function whileAttached(cardPositionInfo: CardPositionInfo) {
+  const { cardPositions, id } = cardPositionInfo
+  const initiator = cardPositions[id]
+  if (!initiator) return
+  if (initiator.timerEnd) return // already running a recipe
+
+  const attachedIds = initiator.attached
+  if (!attachedIds.length) return
+
+  const attachedSlugs = attachedIds
+    .map(aid => cardPositions[aid]?.slug)
+    .filter(Boolean) as CardSlug[]
+  if (attachedSlugs.length !== attachedIds.length) return
+
+  // 1) Try parent.spawnInfo recipes first (most specific match).
+  const parentRecipes = initiator.spawnInfo ?? []
+  for (const recipe of parentRecipes) {
+    if (!areArraysIdentical([...recipe.inputStack], [...attachedSlugs])) continue
+    if (checkIfShouldSkip(cardPositions, recipe.skipIfExists)) continue
+    startRecipeTimer(recipe, cardPositionInfo, attachedIds)
+    return
+  }
+
+  // 2) Fall through to the single attached card's asAttached recipe.
+  // Multi-card stacks have no implicit fallback — they must hit a
+  // spawnInfo recipe to do anything.
+  if (attachedIds.length !== 1) return
+  const attachedCard = cardPositions[attachedIds[0]]
+  const attachedRecipe = attachedCard?.asAttached
+  if (!attachedRecipe) return
+  if (!asAttachedApplies(attachedRecipe, initiator)) return
+  if (checkIfShouldSkip(cardPositions, attachedRecipe.skipIfExists)) return
+  startRecipeTimer(attachedRecipe, cardPositionInfo, attachedIds)
 }

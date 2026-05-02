@@ -1,7 +1,10 @@
+// When true, show debug controls (pause button, etc.) in the corner of the UI.
+export const DEBUGGING = true;
+
 // Master multiplier for in-game timing. Bump this up (e.g. 5) to make the whole
 // game run faster — stat decay, day length, monsoon gusts, and per-card spawn
 // timers (cooking, chopping, exploring...) all scale through gameTickMs below.
-export const GAME_SPEED = 1;
+export const GAME_SPEED = 10;
 
 // Wrap any in-game duration (ms) with this so it honors GAME_SPEED. Used by
 // the named tick constants below and by spawn timers in spawningUtils.ts.
@@ -9,7 +12,7 @@ export const gameTickMs = (ms: number) => ms / GAME_SPEED;
 
 // Season schedule. dayCount increments twice per calendar day (Day, Night),
 // see src/components/SunDial.tsx — so we convert to calendar days here.
-export const MONSOON_START_DAY = 0;
+export const MONSOON_START_DAY = 10;
 export const MONSOON_LENGTH_DAYS = 5;
 export const SUMMER_START_DAY = 40;
 export const DRY_SEASON_START_DAY = 60;
@@ -68,17 +71,19 @@ export const MONSOON_GUST_WAVE_THRESHOLD = 0.4;
 export const MONSOON_GUST_DUTY_PROGRESS = 0.55;
 
 // === Monsoon temperature ===
-// During monsoon, characters chill more aggressively. Storm intensity (the
-// slow rise/fall over the season) lowers both the day warm-up cap and the
-// night cool-down floor; nights take the chill harder than days. Active
-// gusts ("heavy movement phases") stack a fast active-cooling term on top
-// with a much lower floor, so being out in a heavy gust gets characters
-// dangerously cold regardless of day/night.
-// Day cap drop at peak storm intensity: max recovery falls from 100 to
-// (100 - this) so they can't fully refill at a fire during heavy rain.
-export const MONSOON_DAY_TEMP_CAP_DROP = 25;
-// Night floor drop at peak storm intensity: night chill bottoms at
-// (50 - this) instead of 50, so calm monsoon nights still bite.
+// During monsoon, characters chill more aggressively. The day warm-up cap
+// and the night cool-down floor are dropped by flat amounts whenever the
+// monsoon is active (not scaled by storm intensity, so calm periods between
+// storms still feel cold instead of letting characters fully warm back up).
+// Active gusts ("heavy movement phases") stack a fast active-cooling term
+// on top, scaled by gust intensity, with a much lower floor — so being out
+// in a heavy gust gets characters dangerously cold regardless of day/night.
+// Day cap drop while monsoon is active: max recovery falls from 100 to
+// (100 - this), tuned so daytime characters drift down into "Cold".
+export const MONSOON_DAY_TEMP_CAP_DROP = 40;
+// Night floor drop while monsoon is active: night chill bottoms at
+// (50 - this) instead of 50, tuned so monsoon nights drive characters
+// down into "Freezing".
 export const MONSOON_NIGHT_TEMP_FLOOR_DROP = 25;
 // Per-tick decrease at peak gust intensity (scales linearly with gust). At
 // STAT_TICK_MS = 3s, peak = -4/tick = roughly -80/min.
@@ -226,9 +231,6 @@ export const SPAWN_ARC_DURATION_MS = 600;
 export const SPAWN_ARC_LIFT_BASE_PX = 30;
 export const SPAWN_ARC_LIFT_PER_PX = 0.25;
 export const SPAWN_ARC_LIFT_MAX_PX = 90;
-
-// When true, show debug controls (pause button, etc.) in the corner of the UI.
-export const DEBUGGING = false;
 
 export const dayCountToCalendarDay = (dayCount: number) => Math.floor(dayCount / 2);
 

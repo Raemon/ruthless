@@ -2,7 +2,7 @@ import React from 'react'
 import { CardPosition } from "../collections/types";
 
 export const CardDebugging = ({cardPosition}:{cardPosition: CardPosition}) => {
-  return null 
+  // return null 
   return <div>
       {/* <div className={classes.meta} style={{left: 5, top: 5}}>
         {cardPosition.x}, {cardPosition.y}

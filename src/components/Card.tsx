@@ -11,7 +11,7 @@ import { isNight } from './SunDial';
 import { Statuses } from './Statuses/Statuses';
 import { CardDebugging } from './CardDebugging';
 import classNames from 'classnames';
-import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, MONSOON_DAY_TEMP_CAP_DROP, MONSOON_GUST_TEMP_DECAY_PER_TICK, MONSOON_GUST_TEMP_FLOOR, MONSOON_GUST_TEMP_THRESHOLD, MONSOON_NIGHT_TEMP_FLOOR_DROP, PREGNANCY_TICK_MS, SPAWN_ARC_DURATION_MS, SPAWN_ARC_LIFT_BASE_PX, SPAWN_ARC_LIFT_MAX_PX, SPAWN_ARC_LIFT_PER_PX, STACK_OFFSET_X, STACK_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS, getMonsoonGustIntensity, getMonsoonStormIntensity } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, MONSOON_DAY_TEMP_CAP_DROP, MONSOON_GUST_TEMP_DECAY_PER_TICK, MONSOON_GUST_TEMP_FLOOR, MONSOON_GUST_TEMP_THRESHOLD, MONSOON_NIGHT_TEMP_FLOOR_DROP, PREGNANCY_TICK_MS, SPAWN_ARC_DURATION_MS, SPAWN_ARC_LIFT_BASE_PX, SPAWN_ARC_LIFT_MAX_PX, SPAWN_ARC_LIFT_PER_PX, STACK_OFFSET_X, STACK_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS, getMonsoonGustIntensity } from '../collections/constants';
 
 export const getCardDimensions = (card: CardPosition) => {
   if (card.large) {
@@ -258,9 +258,9 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, m
           }
           return newCardPositions;
         }
-        const seasonElapsedMs = monsoonStartedAt !== null ? Date.now() - monsoonStartedAt : 0;
-        const stormIntensity = monsoonStartedAt !== null ? getMonsoonStormIntensity(seasonElapsedMs) : 0;
-        const gustIntensity = monsoonStartedAt !== null ? getMonsoonGustIntensity(seasonElapsedMs) : 0;
+        const monsoonActive = monsoonStartedAt !== null;
+        const seasonElapsedMs = monsoonActive ? Date.now() - monsoonStartedAt : 0;
+        const gustIntensity = monsoonActive ? getMonsoonGustIntensity(seasonElapsedMs) : 0;
         const night = isNight(dayCount);
         const maxTemp = card.maxTemp ?? 100;
         let next = cur;
@@ -272,16 +272,17 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, m
           const floor = Math.round(50 - (50 - MONSOON_GUST_TEMP_FLOOR) * gustIntensity);
           if (cur > floor) next = Math.max(floor, cur - dec);
         } else if (night) {
-          // Storm intensity drops the night cool-down floor below 50, so
-          // even calm monsoon nights bite harder than non-monsoon nights.
-          const floor = Math.round(50 - MONSOON_NIGHT_TEMP_FLOOR_DROP * stormIntensity);
+          // Monsoon nights drop the cool-down floor below 50 by a flat
+          // amount (no storm-pulse gating) so calm monsoon nights still
+          // drive characters into "Freezing".
+          const floor = monsoonActive ? 50 - MONSOON_NIGHT_TEMP_FLOOR_DROP : 50;
           if (cur > floor) next = cur - 1;
         } else {
-          // Day: storm intensity drops the warm-up cap below maxTemp. If
-          // we're already above that cap (e.g., monsoon just started while
-          // the character was at full temp), actively cool down to it
-          // instead of just freezing recovery.
-          const cap = Math.round(maxTemp - MONSOON_DAY_TEMP_CAP_DROP * stormIntensity);
+          // Monsoon days drop the warm-up cap below maxTemp by a flat
+          // amount. If we're already above that cap (e.g., monsoon just
+          // started while the character was at full temp), actively cool
+          // down to it instead of just freezing recovery.
+          const cap = monsoonActive ? maxTemp - MONSOON_DAY_TEMP_CAP_DROP : maxTemp;
           if (cur > cap) next = Math.max(cap, cur - 1);
           else if (cur < cap) next = Math.min(cap, cur + 2);
         }
