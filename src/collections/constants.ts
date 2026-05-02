@@ -201,9 +201,16 @@ export const IDEA_CARD_WIDTH = 120;
 export const IDEA_CARD_HEIGHT = 190;
 export const CHAR_BORDER_WIDTH = 5;
 
-// How attached cards stack on top of one another.
-export const STACK_OFFSET_X = 10;
+// Vertical offset between each card in an attached stack. Cards are
+// centered horizontally on each other (no X offset), but each stacked
+// card sits this many pixels below its parent so the stack is visible.
 export const STACK_OFFSET_Y = 30;
+
+// Per-card fan-out offset applied to the CardTimer when multiple cards
+// are attached in a stack, so each stacked card's timer is individually
+// visible. Intentionally decoupled from STACK_OFFSET_Y.
+export const TIMER_FAN_OFFSET_X = 10;
+export const TIMER_FAN_OFFSET_Y = 30;
 
 // Breathing room left around the screen edge when fitting a spawned card on screen.
 export const CARD_SCREEN_MARGIN_PX = 200;

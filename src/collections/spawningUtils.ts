@@ -3,7 +3,7 @@ import { CardPosition, CardPositionInfo, CurrentCardAttriutes, Effect, MaxCardAt
 import { CardSlug, allCards } from "./cards"
 import { includes, some } from "lodash"
 import { getCardDimensions } from "../components/Card";
-import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
+import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_Y } from "./constants";
 
 export const randomHexId = () => {
   return Math.floor(Math.random() * 16777215).toString(16);
@@ -173,8 +173,9 @@ function spawnNearby(cardPositions: Record<string, CardPosition>, slug: CardSlug
     const sortedPositions = matchingCardPositions.sort((a, b) => b.zIndex - a.zIndex)
     const highestIndexedCardWithSlug = sortedPositions[0]
     if (highestIndexedCardWithSlug) {
+      // Same-slug stack → identical width, so matching x is already centered.
       return tagSpawnFrom(createCardPosition(cardPositions, slug,
-        highestIndexedCardWithSlug.x + STACK_OFFSET_X,
+        highestIndexedCardWithSlug.x,
         highestIndexedCardWithSlug.y + STACK_OFFSET_Y,
         [highestIndexedCardWithSlug.id],
         false,
@@ -431,7 +432,9 @@ function applyEffect(effect: Effect, cardPositions: Record<string, CardPosition>
         cardPositions[newCard.id] = newCard
         const stillThere = cardPositions[initiatorId]
         if (!stillThere) return
-        newCard.x = stillThere.x + STACK_OFFSET_X
+        const initiatorDims = getCardDimensions(stillThere)
+        const newCardDims = getCardDimensions(newCard)
+        newCard.x = stillThere.x + (initiatorDims.width - newCardDims.width) / 2
         newCard.y = stillThere.y + STACK_OFFSET_Y
         newCard.zIndex = stillThere.zIndex + 1
         newCard.attached = [initiatorId]

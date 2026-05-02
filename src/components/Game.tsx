@@ -52,12 +52,12 @@ const useStyles = createUseStyles({
   },
   map: {
     textAlign: 'center',
-    backgroundColor: 'rgba(255,255,255,.25)',
+    backgroundColor: 'rgba(255,255,255,1)',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 'calc(10px + 2vmin)',
-    height: '400%',
-    width: '400%',
+    height: '200%',
+    width: '200%',
     scrollbarWidth: "none",
     msOverflowStyle: "none",
     '&::-webkit-scrollbar': {

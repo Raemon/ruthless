@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DraggableData, DraggableEvent } from 'react-draggable';
 import { getCardDimensions } from '../components/Card';
 import { CardPosition } from './types';
-import { STACK_OFFSET_X, STACK_OFFSET_Y } from './constants';
+import { STACK_OFFSET_Y } from './constants';
 
 function addIfNotInArray (array: string[], value: string): string[] {
   if (array.indexOf(value) === -1) {
@@ -118,8 +118,11 @@ export function getNewCardPosition (cardPositions: Record<string, CardPosition>,
   }
   const attachedCardIndex = getIndexOfHighestAttachedZIndex(cardPositions, attachedCardIndexes);
   if (attachedCardIndex !== undefined) {
-    newCardData.x = cardPositions[attachedCardIndex].x + STACK_OFFSET_X;
-    newCardData.y = cardPositions[attachedCardIndex].y + STACK_OFFSET_Y;
+    const attachedCard = cardPositions[attachedCardIndex];
+    const attachedDims = getCardDimensions(attachedCard);
+    const newCardDims = getCardDimensions(newCardData);
+    newCardData.x = attachedCard.x + (attachedDims.width - newCardDims.width) / 2;
+    newCardData.y = attachedCard.y + STACK_OFFSET_Y;
   }
   return newCardData;
 }

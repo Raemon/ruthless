@@ -11,7 +11,7 @@ import { isNight } from './SunDial';
 import { Statuses } from './Statuses/Statuses';
 import { CardDebugging } from './CardDebugging';
 import classNames from 'classnames';
-import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, MONSOON_DAY_TEMP_CAP_DROP, MONSOON_GUST_TEMP_DECAY_PER_TICK, MONSOON_GUST_TEMP_FLOOR, MONSOON_GUST_TEMP_THRESHOLD, MONSOON_NIGHT_TEMP_FLOOR_DROP, PREGNANCY_TICK_MS, SPAWN_ARC_DURATION_MS, SPAWN_ARC_LIFT_BASE_PX, SPAWN_ARC_LIFT_MAX_PX, SPAWN_ARC_LIFT_PER_PX, STACK_OFFSET_X, STACK_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS, getMonsoonGustIntensity } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, MONSOON_DAY_TEMP_CAP_DROP, MONSOON_GUST_TEMP_DECAY_PER_TICK, MONSOON_GUST_TEMP_FLOOR, MONSOON_GUST_TEMP_THRESHOLD, MONSOON_NIGHT_TEMP_FLOOR_DROP, PREGNANCY_TICK_MS, SPAWN_ARC_DURATION_MS, SPAWN_ARC_LIFT_BASE_PX, SPAWN_ARC_LIFT_MAX_PX, SPAWN_ARC_LIFT_PER_PX, TIMER_FAN_OFFSET_X, TIMER_FAN_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS, getMonsoonGustIntensity } from '../collections/constants';
 
 export const getCardDimensions = (card: CardPosition) => {
   if (card.large) {
@@ -404,8 +404,8 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, m
   // const loot = cardPosition.loot && Object.values(cardPosition.loot).flatMap((item) => item)
 
   const offsetStackSize = getAttachedCardsWithHigherZIndex(cardPositions, id).length
-  const progressBarOffsetX = offsetStackSize * STACK_OFFSET_X
-  const progressBarOffsetY = offsetStackSize * STACK_OFFSET_Y
+  const progressBarOffsetX = offsetStackSize * TIMER_FAN_OFFSET_X
+  const progressBarOffsetY = offsetStackSize * TIMER_FAN_OFFSET_Y
 
   // Snapshot the spawn-arc offset on first mount so subsequent x/y nudges
   // (monsoon wind, tracking, overlap-avoidance) don't warp the in-flight arc.
