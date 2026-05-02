@@ -10,7 +10,6 @@ import { useCardPositions } from '../collections/useCardPositions';
 import { CardPosition } from '../collections/types';
 import { CARD_HEIGHT, CARD_WIDTH, DEBUGGING, isMonsoon } from '../collections/constants';
 import { useMonsoonWind } from '../collections/useMonsoonWind';
-import RainOverlay from './RainOverlay';
 import MonsoonDebugger from './MonsoonDebugger';
 import RainOverlay2 from './RainOverlay2';
 
@@ -225,6 +224,7 @@ function Game() {
                   paused={paused}
                   isDragging={isDragging}
                   dayCount={dayCount}
+                  monsoonStartedAt={monsoonStartedAt}
                 />
               })}
             </div>

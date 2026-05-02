@@ -67,6 +67,31 @@ export const MONSOON_GUST_WAVE_THRESHOLD = 0.4;
 // more of each gust cycle spent pushing (wider gust duty).
 export const MONSOON_GUST_DUTY_PROGRESS = 0.55;
 
+// === Monsoon temperature ===
+// During monsoon, characters chill more aggressively. Storm intensity (the
+// slow rise/fall over the season) lowers both the day warm-up cap and the
+// night cool-down floor; nights take the chill harder than days. Active
+// gusts ("heavy movement phases") stack a fast active-cooling term on top
+// with a much lower floor, so being out in a heavy gust gets characters
+// dangerously cold regardless of day/night.
+// Day cap drop at peak storm intensity: max recovery falls from 100 to
+// (100 - this) so they can't fully refill at a fire during heavy rain.
+export const MONSOON_DAY_TEMP_CAP_DROP = 25;
+// Night floor drop at peak storm intensity: night chill bottoms at
+// (50 - this) instead of 50, so calm monsoon nights still bite.
+export const MONSOON_NIGHT_TEMP_FLOOR_DROP = 25;
+// Per-tick decrease at peak gust intensity (scales linearly with gust). At
+// STAT_TICK_MS = 3s, peak = -4/tick = roughly -80/min.
+export const MONSOON_GUST_TEMP_DECAY_PER_TICK = 4;
+// Floor temp at peak gust intensity. Below the night floor so heavy gusts
+// can drive characters into the danger zone even when they're sheltered
+// from the regular night chill.
+export const MONSOON_GUST_TEMP_FLOOR = 10;
+// Gust intensities below this are too soft to trigger active cooling — we
+// fall through to the day/night branch instead. Avoids flickering between
+// the gust path and the day/night path on the trailing edge of a gust.
+export const MONSOON_GUST_TEMP_THRESHOLD = 0.05;
+
 // === Rain animation ===
 // Streak gradient angle range. The rain leans toward MAX_DEG as storm
 // intensity rises, MIN_DEG when calm. Rotation pivots from the top of the
