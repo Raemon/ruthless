@@ -4,7 +4,7 @@ export const DEBUGGING = false;
 // Master multiplier for in-game timing. Bump this up (e.g. 5) to make the whole
 // game run faster — stat decay, day length, monsoon gusts, and per-card spawn
 // timers (cooking, chopping, exploring...) all scale through gameTickMs below.
-export const GAME_SPEED = 0;
+export const GAME_SPEED = 1;
 
 // Wrap any in-game duration (ms) with this so it honors GAME_SPEED. Used by
 // the named tick constants below and by spawn timers in spawningUtils.ts.
