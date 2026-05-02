@@ -70,6 +70,8 @@ export interface CardPositionBase extends CardType {
   destinationX?: number,
   destinationY?: number,
   destinationSpeed?: number,
+  spawnedFromX?: number,
+  spawnedFromY?: number,
   maybeAttached: string[],
   attached: string[],
   timerStart?: Date,

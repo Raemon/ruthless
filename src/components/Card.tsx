@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { DraggableCore, DraggableData, DraggableEvent } from 'react-draggable';
 import { createUseStyles } from 'react-jss';
 import { CardPosition, CardPositionInfo, CurrentCardAttriutes } from '../collections/types';
@@ -11,7 +11,7 @@ import { isNight } from './SunDial';
 import { Statuses } from './Statuses/Statuses';
 import { CardDebugging } from './CardDebugging';
 import classNames from 'classnames';
-import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, PREGNANCY_TICK_MS, STACK_OFFSET_X, STACK_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, CHAR_BORDER_WIDTH, FADING_TICK_MS, IDEA_CARD_HEIGHT, IDEA_CARD_WIDTH, LARGE_CARD_HEIGHT, LARGE_CARD_WIDTH, PREGNANCY_TICK_MS, SPAWN_ARC_DURATION_MS, SPAWN_ARC_LIFT_BASE_PX, SPAWN_ARC_LIFT_MAX_PX, SPAWN_ARC_LIFT_PER_PX, STACK_OFFSET_X, STACK_OFFSET_Y, STAT_TICK_MS, TRACKING_TICK_MS } from '../collections/constants';
 
 export const getCardDimensions = (card: CardPosition) => {
   if (card.large) {
@@ -70,9 +70,17 @@ export const getCardBorder = (cardPosition: CardPosition) => {
 }
 
 const useStyles = createUseStyles({
+  '@keyframes spawnArc': {
+    '0%':   { transform: 'translate(var(--spawn-dx), var(--spawn-dy))' },
+    '50%':  { transform: 'translate(calc(var(--spawn-dx) * 0.4), calc(var(--spawn-dy) * 0.4 - var(--spawn-lift)))' },
+    '100%': { transform: 'translate(0, 0)' },
+  },
   root: {
     display: "inline-block",
     position: "absolute",
+  },
+  spawning: {
+    animation: `$spawnArc ${SPAWN_ARC_DURATION_MS}ms cubic-bezier(.25,.75,.4,1) forwards`,
   },
   styling: {
     padding: 9,
@@ -349,6 +357,20 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, n
   const progressBarOffsetX = offsetStackSize * STACK_OFFSET_X
   const progressBarOffsetY = offsetStackSize * STACK_OFFSET_Y
 
+  // Snapshot the spawn-arc offset on first mount so subsequent x/y nudges
+  // (monsoon wind, tracking, overlap-avoidance) don't warp the in-flight arc.
+  const [spawnArc] = useState(() => {
+    const fromX = cardPosition?.spawnedFromX
+    const fromY = cardPosition?.spawnedFromY
+    if (fromX === undefined || fromY === undefined || !cardPosition) return null
+    const dx = fromX - cardPosition.x
+    const dy = fromY - cardPosition.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    if (distance < 1) return null
+    const lift = Math.min(SPAWN_ARC_LIFT_BASE_PX + distance * SPAWN_ARC_LIFT_PER_PX, SPAWN_ARC_LIFT_MAX_PX)
+    return { dx, dy, lift }
+  })
+
   if (!cardPosition) return null
 
   const { slug, timerEnd, timerStart, name, imageUrl, currentSpawnDescriptor, cardText, spawningStack, Widget } = cardPosition;
@@ -365,12 +387,19 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, n
     return cardPosition && (!isNight(dayCount) || (!!cardPosition.glowing || cardPosition.attached.some((id) => cardPositions[id].glowing)))
   }
 
-  const renderedCard =  <div className={classes.root} style={{
+  const spawnArcStyle = ((spawnArc && !notDraggable) ? {
+    '--spawn-dx': `${spawnArc.dx}px`,
+    '--spawn-dy': `${spawnArc.dy}px`,
+    '--spawn-lift': `${spawnArc.lift}px`,
+  } : {}) as React.CSSProperties
+
+  const renderedCard =  <div className={classNames(classes.root, {[classes.spawning]: spawnArc && !notDraggable})} style={{
     left: !notDraggable ? cardPosition.x : undefined, 
     top: !notDraggable ? cardPosition.y : undefined, 
     zIndex: cardPosition.zIndex,
     filter: (shouldBeBright(cardPosition)) ? 'brightness(100%)' : 'brightness(80%)',
-    opacity: cardPosition.currentFading !== undefined ? cardPosition.currentFading / (cardPosition.maxFading ?? 100) : 1
+    opacity: cardPosition.currentFading !== undefined ? cardPosition.currentFading / (cardPosition.maxFading ?? 100) : 1,
+    ...spawnArcStyle,
   }}>
     <div className={classNames(classes.styling, {[classes.character]: card.maxHunger && !notDraggable})} style={{
       ...getCardDimensions(cardPosition),

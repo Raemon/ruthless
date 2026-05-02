@@ -225,11 +225,12 @@ export const characterSpawnInfo: SpawnInfo[] = [
     output: ['rawMeat', 'rawMeat', 'rawMeat', 'hatchet'],
   },
   {
-    skipIfExists: ['ancientCalendar'],
+    skipIfExists: ['ancientCalendar', 'ideaSomeoneElseLookAtIt'],
     inputStack: ['mysteriousRuin'],
     duration: 120000,
     descriptor: "Stare at confusedly",
-    output: ['ancientCalendar']
+    preserve: true,
+    output: ['ideaSomeoneElseLookAtIt']
   },
   {
     duration: 6000,

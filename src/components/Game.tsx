@@ -12,6 +12,7 @@ import { CARD_HEIGHT, CARD_WIDTH, DEBUGGING, isMonsoon } from '../collections/co
 import { useMonsoonWind } from '../collections/useMonsoonWind';
 import RainOverlay from './RainOverlay';
 import MonsoonDebugger from './MonsoonDebugger';
+import RainOverlay2 from './RainOverlay2';
 
 export function handleStart(event: DraggableEvent) {
   event.stopPropagation();
@@ -230,7 +231,7 @@ function Game() {
           </Draggable>
         </ScalingField>
       </div>
-      <RainOverlay active={monsoonActive} monsoonStartedAt={monsoonStartedAt} />
+      <RainOverlay2 active={monsoonActive} monsoonStartedAt={monsoonStartedAt} />
       <div className={classes.monsoonLabel} style={{opacity: monsoonActive ? 1 : 0}}>Monsoon Season</div>
       <SunDial dayCount={dayCount} setDayCount={setDayCount} />
       <div className={classes.reset} onClick={() => setCardPositions(initialCardPositions)}>New Game</div>

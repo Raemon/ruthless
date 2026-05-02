@@ -7,20 +7,17 @@ export const startingCards: CardSlug[] = [
   'ruth',
   'shoresidePath',
   'crate',
-  // 'sticks',
-  // 'coconutTree',
+  'sticks',
+  'coconutTree',
   // 'wildBoar',
-  // 'smallFire',
   // 'ancientTree',
-  // 'cabin',
-  // 'shelter',
+  'cabin',
+  'shelter',
   // 'wildBoar',
-  // 'smallFire',
   // 'milo',
   // 'carlos',
   // 'raft',
-  // 'shelteredCove'
-  // 'smallFire'
+  // 'shelteredCove',
   // 'mysteriousRuin'
 ]
 
@@ -37,7 +34,7 @@ export type CardSlug =
   'crate'|'thinkingChair'|
   'smallFire'|
   'raft'|
-  'ideaFire'|'ideaRaft'|'ideaHatchet'|'ideaShelter'|'ideaCabin'|'ideaRope'|'ideaWorkbench'|'ideaHarpoon'|'ideaSpear'|'ideaThinkingChair'|'ideaThinking'|'ideaWhereAreWe'|'ideaGatherSurvivors'|'ideaEscape'|'ideaBiggerBoat'|
+  'ideaFire'|'ideaRaft'|'ideaHatchet'|'ideaShelter'|'ideaCabin'|'ideaRope'|'ideaWorkbench'|'ideaHarpoon'|'ideaSpear'|'ideaThinkingChair'|'ideaThinking'|'ideaWhereAreWe'|'ideaGatherSurvivors'|'ideaEscape'|'ideaBiggerBoat'|'ideaSomeoneElseLookAtIt'|
   'ideaGatherSurvivors'|'ideaEscape'|'ideaBiggerBoat'|
   'sexualTensionCarlosRuth'|'sexualTensionCarlosRuth2'|'cameraderieRuthCarlos'|'loveCarlosRuth'|
   'shelter'|'cabin'|
@@ -315,11 +312,12 @@ export const allCards: Record<CardSlug, CardType> = {
     rest: 300,
     glowing: 50,
     loot: ['ideaRaft'],
-    movedByMonsoon: 1,
+    movedByMonsoon: .2,
   },
   'raft': {
     name: "Raft",
-    imageUrl: 'raft.png'
+    imageUrl: 'raft.png',
+    movedByMonsoon: .5,
   },
   'ancientTree': {
     name: "Ancient Tree",
@@ -588,6 +586,14 @@ export const allCards: Record<CardSlug, CardType> = {
     idea: true,
     cardText: <div>
       <div>7 Hewn Logs, 3 Palm Leaves, 2 Characters</div>
+    </div>
+  },
+  'ideaSomeoneElseLookAtIt': {
+    name: 'Idea: Someone Else Should Look At It',
+    imageUrl: "ideaSomeoneElseLookAtIt.png",
+    idea: true,
+    cardText: <div>
+      <div><em>WTF is this? Maybe someone else can figure it out.</em></div>
     </div>
   },
 

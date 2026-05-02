@@ -3,21 +3,87 @@ import { CardPosition, CardPositionInfo } from "./types"
 import { CardSlug, allCards } from "./cards"
 import { filter, includes, some } from "lodash"
 import { getCardDimensions } from "../components/Card";
-import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
+import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_X, STACK_OFFSET_Y } from "./constants";
 
 export const randomHexId = () => {
   return Math.floor(Math.random() * 16777215).toString(16);
 };
 
-function wouldOverlap(cardPositions: Record<string, CardPosition>, cardPosition: CardPosition) {
-  const { width, height } = getCardDimensions(cardPosition)
-  return Object.values(cardPositions).some((otherCardPosition) => {
-    if (cardPosition.id === otherCardPosition.id) return false
-    const cardsOverlapHorizontally = Math.abs(cardPosition.x - otherCardPosition.x) < (width + 30);
-    const cardsOverlapVertically = Math.abs(cardPosition.y - otherCardPosition.y) < (height + 50);
-    const cardsOverlap = cardsOverlapHorizontally && cardsOverlapVertically;
-    return cardsOverlap;
+// Breathing-room added to each card's bounding box when scoring placements.
+// Two cards whose top-left corners are closer than (width + this, height +
+// this) on each axis are considered to be "overlapping" for placement
+// purposes. Effectively, this is the minimum gap (in px) between any two
+// cards a fresh spawn is allowed to settle into. Higher = the spawn-arc
+// destination lands more visibly clear of neighbors instead of tucking right
+// up against them.
+const PLACEMENT_PADDING_X = 80
+const PLACEMENT_PADDING_Y = 80
+
+type Obstacle = { x: number, y: number, width: number, height: number }
+
+// Precomputed spiral of (dx, dy) offsets to try around the desired spawn
+// point, sorted by ring (closest first). Built once at module load so each
+// spawn just walks a static array.
+const SPAWN_PLACEMENT_OFFSETS: { dx: number, dy: number }[] = (() => {
+  const offsets: { dx: number, dy: number }[] = [{ dx: 0, dy: 0 }]
+  SPAWN_PLACEMENT_RING_RADII_PX.forEach((radius, ringIdx) => {
+    const numAngles = SPAWN_PLACEMENT_INNER_RING_ANGLES + ringIdx * SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH
+    const phase = (ringIdx % 2) * 0.5 // stagger alternating rings so they don't share angles
+    for (let i = 0; i < numAngles; i++) {
+      const theta = ((i + phase) / numAngles) * 2 * Math.PI
+      offsets.push({
+        dx: Math.round(radius * Math.cos(theta)),
+        dy: Math.round(radius * Math.sin(theta)),
+      })
+    }
   })
+  return offsets
+})()
+
+// Sum of overlap "area" between this candidate box and each obstacle, where
+// area uses the padded thresholds above. Returns 0 iff the candidate has no
+// padded overlap with anything (i.e. the historical wouldOverlap = false).
+function placementPenalty(candX: number, candY: number, candWidth: number, candHeight: number, obstacles: Obstacle[]): number {
+  let penalty = 0
+  for (let k = 0; k < obstacles.length; k++) {
+    const other = obstacles[k]
+    const xPress = (candWidth + PLACEMENT_PADDING_X) - Math.abs(candX - other.x)
+    if (xPress <= 0) continue
+    const yPress = (candHeight + PLACEMENT_PADDING_Y) - Math.abs(candY - other.y)
+    if (yPress <= 0) continue
+    penalty += xPress * yPress
+  }
+  return penalty
+}
+
+// Find the closest spiral-ring candidate to (desiredX, desiredY) that has no
+// overlap with any existing card. If none of the candidates are clear, return
+// the candidate with the smallest overlap penalty (i.e. the least-overlapping
+// nearby spot). The obstacle list is built once and reused across candidates.
+function findBestSpawnPlacement(
+  cardPositions: Record<string, CardPosition>,
+  desiredX: number, desiredY: number,
+  candWidth: number, candHeight: number,
+): { x: number, y: number } {
+  const obstacles: Obstacle[] = Object.values(cardPositions).map(c => {
+    const { width, height } = getCardDimensions(c)
+    return { x: c.x, y: c.y, width, height }
+  })
+  let bestX = desiredX
+  let bestY = desiredY
+  let bestPenalty = Infinity
+  for (let i = 0; i < SPAWN_PLACEMENT_OFFSETS.length; i++) {
+    const { dx, dy } = SPAWN_PLACEMENT_OFFSETS[i]
+    const { x, y } = fitCardToScreen(desiredX + dx, desiredY + dy)
+    const penalty = placementPenalty(x, y, candWidth, candHeight, obstacles)
+    if (penalty === 0) return { x, y }
+    if (penalty < bestPenalty) {
+      bestPenalty = penalty
+      bestX = x
+      bestY = y
+    }
+  }
+  return { x: bestX, y: bestY }
 }
 
 export function createCardPosition(cardPositions: Record<string, CardPosition>, slug: CardSlug, x: number, y: number, attached?: string[], avoidOverlap = true, zIndex?: number): CardPosition {
@@ -46,15 +112,11 @@ export function createCardPosition(cardPositions: Record<string, CardPosition>, 
     id: randomHexId(),
     dragging: false,
   }
-  let i = 0
-  while (wouldOverlap(cardPositions, newCardPosition) && avoidOverlap && i < 1000) {
-    i++
-    const { x: newX, y: newY} = fitCardToScreen(
-      Math.max(newCardPosition.x + Math.round(Math.random() * 50 - 25), 0),
-      Math.max(newCardPosition.y + Math.round(Math.random() * 50 - 25), 0)
-    )
-    newCardPosition.x = newX
-    newCardPosition.y = newY
+  if (avoidOverlap) {
+    const { width, height } = getCardDimensions(newCardPosition)
+    const placed = findBestSpawnPlacement(cardPositions, newCardPosition.x, newCardPosition.y, width, height)
+    newCardPosition.x = placed.x
+    newCardPosition.y = placed.y
   }
   return newCardPosition
 }
@@ -95,6 +157,12 @@ function fitCardToScreen(x: number, y: number) {
   return {x: newX, y: newY}
 }
 
+function tagSpawnFrom(card: CardPosition, parent: CardPosition) {
+  card.spawnedFromX = parent.x
+  card.spawnedFromY = parent.y
+  return card
+}
+
 function spawnNearby(cardPositions: Record<string, CardPosition>, slug: CardSlug, parent: CardPosition, soFarOutput: CardPosition[] = []) {
   const cardPositionsList = Object.values(cardPositions)
   const cardPositionsSlugs = Object.values(cardPositions).map(cardPosition => cardPosition.slug)
@@ -105,22 +173,22 @@ function spawnNearby(cardPositions: Record<string, CardPosition>, slug: CardSlug
     const sortedPositions = matchingCardPositions.sort((a, b) => b.zIndex - a.zIndex)
     const highestIndexedCardWithSlug = sortedPositions[0]
     if (highestIndexedCardWithSlug) {
-      return createCardPosition(cardPositions, slug,
+      return tagSpawnFrom(createCardPosition(cardPositions, slug,
         highestIndexedCardWithSlug.x + STACK_OFFSET_X,
         highestIndexedCardWithSlug.y + STACK_OFFSET_Y,
         [highestIndexedCardWithSlug.id],
         false,
         highestIndexedCardWithSlug.zIndex + 1
-      )
+      ), parent)
     }
   }
-  if (soFarOutput) return spawnInSemiCircle(cardPositions, slug, parent, soFarOutput.length)
+  if (soFarOutput) return tagSpawnFrom(spawnInSemiCircle(cardPositions, slug, parent, soFarOutput.length), parent)
   const { width } = getCardDimensions(parent)
   const {x, y} = fitCardToScreen(
     parent.x + width + 25, 
     parent.y + 25
   )
-  return createCardPosition(cardPositions, slug, x, y)
+  return tagSpawnFrom(createCardPosition(cardPositions, slug, x, y), parent)
 }
 
 function spawnInSemiCircle(cardPositions: Record<string, CardPosition>,  slug: CardSlug, parent: CardPosition, i = 0, radius = SEMICIRCLE_SPAWN_RADIUS, angleIncrement: number = SEMICIRCLE_SPAWN_ANGLE_INCREMENT) {

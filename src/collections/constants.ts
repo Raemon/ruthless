@@ -28,7 +28,7 @@ export const MONSOON_GUST_DISTANCE_PX = 10;
 // overall). Vertical scale is in [-DRIFT, +DRIFT], averaging zero so cards
 // don't drift up or down over time.
 export const MONSOON_GUST_HORIZONTAL_VARIANCE = 0.4;
-export const MONSOON_GUST_VERTICAL_DRIFT = 0.1;
+export const MONSOON_GUST_VERTICAL_DRIFT = 0.05;
 
 // === Wave model (three nested timescales drive the wind) ===
 //   1. Season envelope (slow): rises to a peak around mid-monsoon and falls
@@ -182,8 +182,28 @@ export const CARD_SCREEN_MARGIN_PX = 200;
 export const SEMICIRCLE_SPAWN_RADIUS = 50;
 export const SEMICIRCLE_SPAWN_ANGLE_INCREMENT = Math.PI / 5;
 
+// Concentric search rings used when the desired spawn spot is occupied. We
+// step out in rings, trying candidate positions on each ring; the first ring
+// with a non-overlapping slot wins, and if none exists we settle for the
+// least-overlapping candidate found across all rings.
+export const SPAWN_PLACEMENT_RING_RADII_PX = [40, 80, 120, 170, 230];
+// Number of evenly-spaced angle samples on the innermost ring; outer rings
+// add this many more samples per ring (so larger rings get denser coverage).
+export const SPAWN_PLACEMENT_INNER_RING_ANGLES = 8;
+export const SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH = 4;
+
+// When a card is created from a parent, it visually arcs from the parent's
+// position over to its real spot. Real-time, not gameTickMs-scaled — this is a
+// UI flourish.
+export const SPAWN_ARC_DURATION_MS = 600;
+// Vertical lift at the apex of the arc, in px. Scales gently with travel
+// distance so short hops don't loft absurdly high.
+export const SPAWN_ARC_LIFT_BASE_PX = 30;
+export const SPAWN_ARC_LIFT_PER_PX = 0.25;
+export const SPAWN_ARC_LIFT_MAX_PX = 90;
+
 // When true, show debug controls (pause button, etc.) in the corner of the UI.
-export const DEBUGGING = true;
+export const DEBUGGING = false;
 
 export const dayCountToCalendarDay = (dayCount: number) => Math.floor(dayCount / 2);
 
