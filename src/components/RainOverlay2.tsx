@@ -51,8 +51,18 @@ import {
 //
 // Same props/contract as RainOverlay so it can be swapped in directly.
 
-const MAX_DROPS = 700;
+// Pool sizes. The drop pool is sized to allow ~50% more drops than the
+// original baseline at peak storm AND further headroom for the gust-driven
+// boost (see GUST_DROP_BOOST_FRAC below).
+const MAX_DROPS = 1400;
+const BASELINE_DROPS_AT_PEAK_STORM = 1050;
 const MAX_SPLASHES = 600;
+// Peak gust adds up to +33% drops on top of the storm baseline, makes drops
+// fall up to +50% faster, and bows the streak control point by up to 40% of
+// the streak length toward screen-left so streaks visibly arc into the wind.
+const GUST_DROP_BOOST_FRAC = 0.33;
+const GUST_FALL_SPEED_BOOST = 0.5;
+const GUST_DROP_ARC_FRAC = 0.4;
 
 // Drop physics — these are at depth=1 (nearest). All values lerp from the
 // FAR_* end of the range down to the NEAR_* end as depth rises.
@@ -62,8 +72,8 @@ const NEAR_LEN_PX = 30;
 const FAR_LEN_PX = 5;
 const NEAR_WIDTH_PX = 1.7;
 const FAR_WIDTH_PX = 0.35;
-const NEAR_ALPHA = 0.95;
-const FAR_ALPHA = 0.18;
+const NEAR_ALPHA = 0.75;
+const FAR_ALPHA = 0.14;
 // Horizontal wind speed at peak gust intensity at depth=1, in px/s. Far
 // drops feel a fraction of this (scaled by depth). Negative = leftward,
 // matching the existing card-pushing wind direction.
@@ -174,11 +184,17 @@ const spawnSplash = (splashes: Splash[], x: number, y: number, depth: number) =>
 };
 
 const stepSim = (state: SimState, w: number, h: number, dtS: number, stormIntensity: number, gustIntensity: number) => {
-  // Active fraction of the drop pool — quiet storms show fewer drops, peak
-  // storms show all of them. We bound the floor so the canvas isn't empty
-  // during early calm.
-  const activeFraction = 0.18 + 0.82 * stormIntensity;
-  const activeCount = Math.floor(MAX_DROPS * activeFraction);
+  // Drop count: quiet storms show a thin baseline; peak storm-no-gust shows
+  // 50% more drops than the original baseline (BASELINE_DROPS_AT_PEAK_STORM);
+  // active gusts boost that count further by up to GUST_DROP_BOOST_FRAC,
+  // matching the periods when useMonsoonWind is actively pushing cards.
+  const stormDropCount = (0.18 + 0.82 * stormIntensity) * BASELINE_DROPS_AT_PEAK_STORM;
+  const activeCount = Math.min(MAX_DROPS, Math.floor(stormDropCount * (1 + GUST_DROP_BOOST_FRAC * gustIntensity)));
+
+  // Drops fall faster during gusts, in the same window where cards are being
+  // pushed leftward — sells the visual that the wind is actively driving the
+  // rain harder, not just spawning more of it.
+  const fallSpeedMultiplier = 1 + GUST_FALL_SPEED_BOOST * gustIntensity;
 
   const windPxPerS = WIND_PX_PER_S_AT_PEAK * gustIntensity + STORM_BIAS_WIND_PX_PER_S * stormIntensity;
 
@@ -193,7 +209,7 @@ const stepSim = (state: SimState, w: number, h: number, dtS: number, stormIntens
     // Wind sensitivity scales with depth so far drops barely lean.
     const dropVx = windPxPerS * (0.25 + d.depth * 0.85);
     d.x += dropVx * dtS;
-    d.y += d.vy * dtS;
+    d.y += d.vy * fallSpeedMultiplier * dtS;
     if (d.y >= h) {
       // Spawn a small ground splash before recycling. Splash density also
       // gates on storm intensity so light drizzle doesn't carpet the
@@ -259,19 +275,27 @@ const drawHaze = (ctx: CanvasRenderingContext2D, w: number, h: number, state: Si
 
 const drawDrops = (ctx: CanvasRenderingContext2D, w: number, h: number, state: SimState, stormIntensity: number, gustIntensity: number) => {
   const windPxPerS = WIND_PX_PER_S_AT_PEAK * gustIntensity + STORM_BIAS_WIND_PX_PER_S * stormIntensity;
+  // Match stepSim: streak direction must be derived from the same effective
+  // vy used to integrate motion, otherwise streaks would lean wrong during
+  // gusts (drawn slower than they actually fall).
+  const fallSpeedMultiplier = 1 + GUST_FALL_SPEED_BOOST * gustIntensity;
   ctx.lineCap = 'round';
   const drops = state.drops;
   for (let i = 0; i < drops.length; i++) {
     const d = drops[i];
     if (d.y < -d.len || d.y >= h) continue;
     const dropVx = windPxPerS * (0.25 + d.depth * 0.85);
-    const speed = Math.hypot(dropVx, d.vy);
+    const effectiveVy = d.vy * fallSpeedMultiplier;
+    const speed = Math.hypot(dropVx, effectiveVy);
     if (speed < 1) continue;
     const ux = dropVx / speed;
-    const uy = d.vy / speed;
+    const uy = effectiveVy / speed;
     const tailX = d.x - ux * d.len;
     const tailY = d.y - uy * d.len;
-    // Linear gradient streak: tail transparent, head full alpha.
+    // Linear gradient streak: tail transparent, head full alpha. The gradient
+    // is defined between two endpoints, so it still colors the curved stroke
+    // sensibly when we arc the path below — alpha rises from tail to head
+    // along the chord, which is exactly what we want for a bowed streak.
     const grad = ctx.createLinearGradient(tailX, tailY, d.x, d.y);
     grad.addColorStop(0, `rgba(${RAIN_COLOR_RGB}, 0)`);
     grad.addColorStop(1, `rgba(${RAIN_COLOR_RGB}, ${d.alpha})`);
@@ -279,7 +303,21 @@ const drawDrops = (ctx: CanvasRenderingContext2D, w: number, h: number, state: S
     ctx.lineWidth = d.width;
     ctx.beginPath();
     ctx.moveTo(tailX, tailY);
-    ctx.lineTo(d.x, d.y);
+    // During gusts, bow the streak toward screen-left so it visually arcs
+    // into the wind. Perpendicular (-uy, ux) to (ux, uy) always has a
+    // negative x-component when uy > 0 (drops fall downward), which is the
+    // leftward bow we want; magnitude scales with both gust intensity and
+    // streak length so far/short drops bow proportionally less.
+    const arcMag = d.len * GUST_DROP_ARC_FRAC * gustIntensity;
+    if (arcMag > 0.5) {
+      const midX = (tailX + d.x) / 2;
+      const midY = (tailY + d.y) / 2;
+      const cpX = midX + -uy * arcMag;
+      const cpY = midY + ux * arcMag;
+      ctx.quadraticCurveTo(cpX, cpY, d.x, d.y);
+    } else {
+      ctx.lineTo(d.x, d.y);
+    }
     ctx.stroke();
   }
 };

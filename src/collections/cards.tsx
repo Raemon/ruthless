@@ -284,7 +284,7 @@ export const allCards: Record<CardSlug, CardType> = {
     imageUrl: 'crate.png',
     loot: ['cannedBeans'],
     spawnDescriptor: "Opening...",
-    movedByMonsoon: .5,
+    movedByMonsoon: 1,
   },
   'flint': {
     name: "Flint",
