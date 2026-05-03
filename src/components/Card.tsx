@@ -57,16 +57,25 @@ export const getCardBackground = (cardPosition: CardPosition, dayCount: number) 
 }
 
 export const getCardBorder = (cardPosition: CardPosition) => {
+  const borderWidth = getCardBorderWidth(cardPosition)
   if (cardPosition.maxStamina) {
-    return `solid ${CHAR_BORDER_WIDTH}px rgb(93, 77, 18)`
+    return `solid ${borderWidth}px rgb(46, 40, 21)`
   } else if (cardPosition.attached.length) {
-    return "solid 1px rgba(0,0,0,1)"
+    return `solid ${borderWidth}px rgba(0,0,0,1)`
   } else if (cardPosition.idea) {
-    return "dashed 2px rgba(0,0,0,.2)"
+    return `dashed ${borderWidth}px rgba(0,0,0,.2)`
   } else if (cardPosition.enemy) {
-    return "solid 3px rgba(200,0,0,1)"
+    return `solid ${borderWidth}px rgba(200,0,0,1)`
   }
   return ""
+}
+
+export const getCardBorderWidth = (cardPosition: CardPosition) => {
+  if (cardPosition.maxStamina) return CHAR_BORDER_WIDTH
+  if (cardPosition.attached.length) return 1
+  if (cardPosition.idea) return 2
+  if (cardPosition.enemy) return 3
+  return 1
 }
 
 const useStyles = createUseStyles({
@@ -410,15 +419,20 @@ const Card = ({onDrag, onStop, cardPositionInfo, paused, isDragging, dayCount, m
   // Snapshot the spawn-arc offset on first mount so subsequent x/y nudges
   // (monsoon wind, tracking, overlap-avoidance) don't warp the in-flight arc.
   const [spawnArc] = useState(() => {
-    const fromX = cardPosition?.spawnedFromX
-    const fromY = cardPosition?.spawnedFromY
-    if (fromX === undefined || fromY === undefined || !cardPosition) return null
-    const dx = fromX - cardPosition.x
-    const dy = fromY - cardPosition.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
-    if (distance < 1) return null
-    const lift = Math.min(SPAWN_ARC_LIFT_BASE_PX + distance * SPAWN_ARC_LIFT_PER_PX, SPAWN_ARC_LIFT_MAX_PX)
-    return { dx, dy, lift }
+    const spawnFromX = cardPosition?.spawnedFromX
+    const spawnFromY = cardPosition?.spawnedFromY
+    if (spawnFromX === undefined || spawnFromY === undefined || !cardPosition) return null
+    // Offset from the card's resting position back to where it spawned. The CSS
+    // animation starts the card shifted by this offset (so it visually appears
+    // at the spawn point) and then slides home to (0,0).
+    const startOffsetX = spawnFromX - cardPosition.x
+    const startOffsetY = spawnFromY - cardPosition.y
+    const travelDistancePx = Math.sqrt(startOffsetX * startOffsetX + startOffsetY * startOffsetY)
+    if (travelDistancePx < 1) return null
+    // How high the card arcs up at the apex. Longer hops loft a bit higher,
+    // capped so a big jump doesn't soar absurdly.
+    const arcApexHeightPx = Math.min(SPAWN_ARC_LIFT_BASE_PX + travelDistancePx * SPAWN_ARC_LIFT_PER_PX, SPAWN_ARC_LIFT_MAX_PX)
+    return { dx: startOffsetX, dy: startOffsetY, lift: arcApexHeightPx }
   })
 
   if (!cardPosition) return null

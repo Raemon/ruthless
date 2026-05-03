@@ -199,7 +199,7 @@ export const LARGE_CARD_WIDTH = 130;
 export const LARGE_CARD_HEIGHT = 220;
 export const IDEA_CARD_WIDTH = 120;
 export const IDEA_CARD_HEIGHT = 190;
-export const CHAR_BORDER_WIDTH = 1;
+export const CHAR_BORDER_WIDTH = 3;
 
 // Vertical offset between each card in an attached stack. Cards are
 // centered horizontally on each other (no X offset), but each stacked

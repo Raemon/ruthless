@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { DraggableData, DraggableEvent } from 'react-draggable';
-import { getCardDimensions } from '../components/Card';
+import { getCardBorderWidth, getCardDimensions } from '../components/Card';
 import { CardPosition } from './types';
 import { STACK_OFFSET_Y } from './constants';
 
@@ -93,9 +93,11 @@ export function handleNewCardPosition(cardPositions: Record<string, CardPosition
     if (card.timerId) clearTimeout(card.timerId);
     const prevDims = getCardDimensions(prevCard);
     const cardDims = getCardDimensions(card);
+    const prevOuterWidth = prevDims.width + getCardBorderWidth(prevCard) * 2;
+    const cardOuterWidth = cardDims.width + getCardBorderWidth(card) * 2;
     const newCardData: CardPosition = {
       ...card,
-      x: prevCard.x + (prevDims.width - cardDims.width) / 2,
+      x: prevCard.x + (prevOuterWidth - cardOuterWidth) / 2,
       y: prevCard.y + STACK_OFFSET_Y,
       zIndex: prevCard.zIndex + 1,
       maybeAttached: [],
@@ -194,7 +196,9 @@ export function getNewCardPosition (cardPositions: Record<string, CardPosition>,
     const attachedCard = cardPositions[attachedCardIndex];
     const attachedDims = getCardDimensions(attachedCard);
     const newCardDims = getCardDimensions(newCardData);
-    newCardData.x = attachedCard.x + (attachedDims.width - newCardDims.width) / 2;
+    const attachedOuterWidth = attachedDims.width + getCardBorderWidth(attachedCard) * 2;
+    const newCardOuterWidth = newCardDims.width + getCardBorderWidth(newCardData) * 2;
+    newCardData.x = attachedCard.x + (attachedOuterWidth - newCardOuterWidth) / 2;
     newCardData.y = attachedCard.y + STACK_OFFSET_Y;
   }
   return newCardData;
