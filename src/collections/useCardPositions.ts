@@ -4,6 +4,11 @@ import { getCardDimensions } from '../components/Card';
 import { CardPosition } from './types';
 import { STACK_OFFSET_Y } from './constants';
 
+// During a drag the bottom card and every card stacked on top of it are
+// pushed onto these zIndices (in ascending order) so they paint on top of
+// every other card while preserving their relative order within the group.
+const DRAG_BASE_ZINDEX = 1000000;
+
 function addIfNotInArray (array: string[], value: string): string[] {
   if (array.indexOf(value) === -1) {
     return [...array, value];
@@ -24,9 +29,13 @@ export const isOverlapping = (cardPositions: Record<string, CardPosition>, i: st
 
   
 // find an overlapping card wiht
-export const getAttachedIndexes = (cardPositions: Record<string, CardPosition>, id: string) => {
+// excludeIds skips a set of card ids when looking for overlaps. Used by the
+// group-drag logic so the bottom card of a dragged stack only sees the
+// underlying cards it landed on, not the rest of its own moving group.
+export const getAttachedIndexes = (cardPositions: Record<string, CardPosition>, id: string, excludeIds: Set<string> = new Set()) => {
   let attachedCardIndex: string|undefined = undefined
    Object.keys(cardPositions).forEach(id2 => {
+    if (excludeIds.has(id2)) return;
     if (isOverlapping(cardPositions, id, id2)) {
       if (!attachedCardIndex) {
         attachedCardIndex = id2;
@@ -36,37 +45,101 @@ export const getAttachedIndexes = (cardPositions: Record<string, CardPosition>, 
     }
    })
   if (attachedCardIndex !== undefined) {
-    const otherAttachedCards = cardPositions[attachedCardIndex].attached.filter((j) => j !== id);
+    const otherAttachedCards = cardPositions[attachedCardIndex].attached.filter((j) => j !== id && !excludeIds.has(j));
     return [attachedCardIndex, ...otherAttachedCards];
   } else {
     return []
   }
 }
 
-export function handleNewCardPosition(cardPositions: Record<string, CardPosition>, index: string, setCardPositions: (cardPositions: Record<string, CardPosition>) => void) {
-  const newPositions = {...cardPositions};
-  const newCardPosition = getNewCardPosition(cardPositions, index);
-  newPositions[index] = newCardPosition;
+// The "drag group" for a Stacklands-style pickup: the card itself plus every
+// card stacked on top of it in the same attached stack, sorted bottom-up by
+// zIndex. Picking up the top of a stack returns just that card; picking up
+// the bottom returns the entire stack.
+export const getDragGroupIds = (cardPositions: Record<string, CardPosition>, id: string): string[] => {
+  const card = cardPositions[id];
+  if (!card) return [id];
+  const aboveCards = card.attached
+    .map(aid => cardPositions[aid])
+    .filter(c => c && c.zIndex > card.zIndex && !c.enemy)
+    .sort((a, b) => a.zIndex - b.zIndex);
+  return [id, ...aboveCards.map(c => c.id)];
+}
 
-  newCardPosition.attached.forEach((id) => {
-    newPositions[id].attached = addIfNotInArray(newPositions[id].attached, index)
-  })
-  const cardsNoLongerAttachedToIndex = cardPositions[index].attached.filter((id) => {
-    return newCardPosition.attached.indexOf(id) === -1;
+// Drop handler. Resolves stack membership for a Stacklands-style group drag:
+// `index` is the bottom card the user grabbed, and the group is `index` plus
+// every card stacked above it. The bottom card snaps onto whatever it now
+// overlaps (excluding the rest of the group), then the group cards re-stack
+// on top in their original relative order. The combined stack (underlying +
+// group) all share the same `attached` list so the recipe/whileAttached
+// invariants still hold. Group of size 1 collapses to the historical
+// single-card drop behavior.
+export function handleNewCardPosition(cardPositions: Record<string, CardPosition>, index: string, setCardPositions: (cardPositions: Record<string, CardPosition>) => void) {
+  const groupIds = getDragGroupIds(cardPositions, index);
+  const groupSet = new Set(groupIds);
+
+  const newPositions = {...cardPositions};
+
+  // Snap the bottom card onto whatever non-group card it now overlaps with.
+  const newBottomPosition = getNewCardPosition(cardPositions, index, groupSet);
+  newPositions[index] = newBottomPosition;
+  const underlyingAttachedIds = newBottomPosition.attached;
+
+  // Stack the rest of the group on top in order, preserving relative ordering.
+  let prevCard = newBottomPosition;
+  for (let groupOrderIdx = 1; groupOrderIdx < groupIds.length; groupOrderIdx++) {
+    const groupCardId = groupIds[groupOrderIdx];
+    const card = cardPositions[groupCardId];
+    if (card.timerId) clearTimeout(card.timerId);
+    const prevDims = getCardDimensions(prevCard);
+    const cardDims = getCardDimensions(card);
+    const newCardData: CardPosition = {
+      ...card,
+      x: prevCard.x + (prevDims.width - cardDims.width) / 2,
+      y: prevCard.y + STACK_OFFSET_Y,
+      zIndex: prevCard.zIndex + 1,
+      maybeAttached: [],
+      timerEnd: undefined,
+      timerStart: undefined,
+      timerId: undefined,
+      dragging: false,
+      attached: [],
+    };
+    newPositions[groupCardId] = newCardData;
+    prevCard = newCardData;
+  }
+
+  // Every card in the combined stack gets the full stack (minus self) as its
+  // attached list, preserving the existing single-stack invariant.
+  const combinedStackIds = [...underlyingAttachedIds, ...groupIds];
+  const combinedStackSet = new Set(combinedStackIds);
+  combinedStackIds.forEach((stackCardId) => {
+    if (!newPositions[stackCardId]) return;
+    newPositions[stackCardId] = {
+      ...newPositions[stackCardId],
+      attached: combinedStackIds.filter((otherId) => otherId !== stackCardId),
+    };
   });
 
-  cardsNoLongerAttachedToIndex.forEach((id) => {
-    const newPosition = newPositions[id]
-    if (!newPosition) return
-    const oldAttached = (newPosition && newPositions[id].attached) ?? []
-    newPosition.attached = oldAttached.filter((j) => j !== index);
+  // Cards previously attached to anything in the group but not in the new
+  // combined stack drop the group from their attached list (e.g., the lower
+  // half of a stack the user split apart).
+  Object.keys(cardPositions).forEach((otherId) => {
+    if (combinedStackSet.has(otherId)) return;
+    const oldCard = cardPositions[otherId];
+    if (oldCard.attached.some((aid) => groupSet.has(aid))) {
+      newPositions[otherId] = {
+        ...newPositions[otherId],
+        attached: newPositions[otherId].attached.filter((aid) => !groupSet.has(aid)),
+      };
+    }
   });
 
   // find less janky way to do this
-  Object.keys(cardPositions).forEach((i) => {
+  Object.keys(newPositions).forEach((i) => {
     const attached = []
-    for (const j in cardPositions) {
-      if (isOverlapping(cardPositions, i, j)) attached.push(j)
+    for (const j in newPositions) {
+      if (isOverlapping(newPositions, i, j)) attached.push(j)
     }
     if (attached.length === 0) {
       newPositions[i].attached = []
@@ -103,9 +176,9 @@ function getIndexOfHighestAttachedZIndex (cardPositions: Record<string, CardPosi
   return highestAttachedIndex;
 }
 
-export function getNewCardPosition (cardPositions: Record<string, CardPosition>, index: string): CardPosition {
+export function getNewCardPosition (cardPositions: Record<string, CardPosition>, index: string, excludeIds: Set<string> = new Set()): CardPosition {
   const cardPosition = cardPositions[index];  
-  const attachedCardIndexes = getAttachedIndexes(cardPositions, index);
+  const attachedCardIndexes = getAttachedIndexes(cardPositions, index, excludeIds);
   clearTimeout(cardPosition.timerId);
   const newCardData = { ...cardPosition,
     zIndex: getZIndex(cardPositions, cardPosition, attachedCardIndexes),
@@ -245,17 +318,49 @@ export function useCardPositions(initialPositions: Record<string, CardPosition>)
   const onDrag = useCallback((event: DraggableEvent, data: DraggableData, i: string) => {
     setIsDragging(true);
     setLatestCardPosition(cardPositions[i]);
-    const newPositions = {...cardPositions};
     const cardPosition = cardPositions[i];
     if (cardPosition.enemy) return
-    newPositions[i] = { ...cardPosition, 
-      x: cardPosition.x + data.deltaX,
-      y: cardPosition.y + data.deltaY,
-      dragging: true,
-      maybeAttached: getAttachedIndexes(cardPositions, i),
-      zIndex: 1000000
+    const newPositions = {...cardPositions};
+
+    // Stacklands-style group pickup: the dragged card plus every card stacked
+    // above it move together as a rigid body, preserving their visual offsets.
+    const groupIds = getDragGroupIds(cardPositions, i);
+    const groupSet = new Set(groupIds);
+
+    groupIds.forEach((groupCardId, groupOrderIdx) => {
+      const card = newPositions[groupCardId];
+      newPositions[groupCardId] = {
+        ...card,
+        x: card.x + data.deltaX,
+        y: card.y + data.deltaY,
+        dragging: true,
+        zIndex: DRAG_BASE_ZINDEX + groupOrderIdx,
+        // Detach from any non-group stack members so the user has visibly
+        // peeled the group off the bottom of the stack mid-drag.
+        attached: card.attached.filter((aid) => groupSet.has(aid)),
+      };
+    });
+
+    // Mirror the detach on the cards left behind so they don't keep stale
+    // references to the group members that just walked off.
+    Object.keys(newPositions).forEach((otherId) => {
+      if (groupSet.has(otherId)) return;
+      const other = newPositions[otherId];
+      if (other.attached.some((aid) => groupSet.has(aid))) {
+        newPositions[otherId] = {
+          ...other,
+          attached: other.attached.filter((aid) => !groupSet.has(aid)),
+        };
+      }
+    });
+
+    // The drop-target outline only matters for the bottom card of the group;
+    // the rest are visually riding along.
+    newPositions[i] = {
+      ...newPositions[i],
+      maybeAttached: getAttachedIndexes(newPositions, i, groupSet),
     };
-    
+
     setCardPositions(newPositions);
   }, [cardPositions, getAttachedIndexes]);
 
