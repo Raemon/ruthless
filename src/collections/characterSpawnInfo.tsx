@@ -297,7 +297,7 @@ export const ruthSpawnInfo: SpawnInfo[] = [
     effects: [
       {type: 'spawn', slugs: ['ideaGatherSurvivors']},
       {type: 'restoreInitiator', attr: 'currentStamina', amount: 2000},
-      {type: 'restoreInitiator', attr: 'currentTemp', amount: 20},
+      {type: 'restoreInitiator', attr: 'currentTemp', amount: 100},
     ],
   },
   {

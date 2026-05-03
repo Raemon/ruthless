@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Card, { getCardDimensions } from './Card';
+import Card from './Card/Card';
+import { getCardDimensions } from './Card/cardAppearance';
 import { createUseStyles } from 'react-jss';
 import SunDial, { isNight } from './SunDial';
 import ScalingField from './ScalingField';

@@ -2,8 +2,8 @@ import sample from "lodash/sample"
 import { CardPosition, CardPositionInfo, CurrentCardAttriutes, Effect, MaxCardAttributes, Recipe } from "./types"
 import { CardSlug, allCards } from "./cards"
 import { includes, some } from "lodash"
-import { getCardDimensions } from "../components/Card";
-import { CARD_HEIGHT, CARD_WIDTH, gameTickMs, MAP_EDGE_FADE_PX, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_Y } from "./constants";
+import { getCardDimensions } from "../components/Card/cardAppearance";
+import { CARD_HEIGHT, CARD_WIDTH, gameTickMs, MAP_EDGE_FADE_PX, RUTH_STAT_OVERRIDES, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_Y } from "./constants";
 
 export const randomHexId = () => {
   return Math.floor(Math.random() * 16777215).toString(16);
@@ -109,6 +109,7 @@ export function createCardPosition(cardPositions: Record<string, CardPosition>, 
     x,
     y,
     ...card,
+    ...(slug === 'ruth' ? RUTH_STAT_OVERRIDES : {}),
     id: randomHexId(),
     dragging: false,
   }
@@ -130,17 +131,18 @@ export function getAttachedCardsSortedByZIndex (cardPositionInfo: CardPositionIn
 }
 
 export const updateCardPosition = (
-  cardPositionInfo: CardPositionInfo, 
+  cardPositionInfo: CardPositionInfo,
   updateFunction: (cardPosition: CardPosition) => CardPosition
 ) => {
   const { setCardPositions, id } = cardPositionInfo
   setCardPositions((prevCardPositions: Record<string, CardPosition>) => {
-    const newCardPositions = {...prevCardPositions};
-    if (newCardPositions[id]) {
-      const cardPosition = newCardPositions[id];
-      newCardPositions[id] = updateFunction(cardPosition);
-    }
-    return newCardPositions;
+    const cardPosition = prevCardPositions[id];
+    if (!cardPosition) return prevCardPositions;
+    const updated = updateFunction(cardPosition);
+    // Bail out when the updater chose not to change anything: returning the
+    // same ref lets React's setState skip the re-render entirely.
+    if (updated === cardPosition) return prevCardPositions;
+    return {...prevCardPositions, [id]: updated};
   });
 };
 

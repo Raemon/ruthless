@@ -1,3 +1,5 @@
+import { CurrentCardAttriutes } from './types';
+
 // When true, show debug controls (pause button, etc.) in the corner of the UI.
 export const DEBUGGING = false;
 
@@ -181,6 +183,13 @@ export const getMonsoonGustIntensity = (seasonElapsedMs: number): number => {
   const windSeasonScale = MONSOON_SEASON_ENVELOPE_FLOOR + (1 - MONSOON_SEASON_ENVELOPE_FLOOR) * progress;
   const natural = windSeasonScale * getMonsoonStormPulse(seasonElapsedMs) * getMonsoonGustPulse(seasonElapsedMs);
   return Math.max(natural, getMonsoonIntroBurst(seasonElapsedMs));
+};
+
+export const RUTH_STAT_OVERRIDES: Partial<CurrentCardAttriutes> = {
+  // currentHunger: 400,
+  // currentStamina: 600,
+  // currentTemp: 1,
+  // currentHealth: 6,
 };
 
 // Default tick rate for stat decay (hunger, fuel, stamina, decay, temp).

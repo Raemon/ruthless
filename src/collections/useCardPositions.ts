@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { DraggableData, DraggableEvent } from 'react-draggable';
-import { getCardBorderWidth, getCardDimensions } from '../components/Card';
+import { getCardBorderWidth, getCardDimensions } from '../components/Card/cardAppearance';
 import { CardPosition } from './types';
 import { STACK_OFFSET_Y } from './constants';
 
