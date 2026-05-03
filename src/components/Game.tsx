@@ -8,7 +8,7 @@ import { startingCards } from '../collections/cards';
 import { createCardPosition } from '../collections/spawningUtils';
 import { useCardPositions } from '../collections/useCardPositions';
 import { CardPosition } from '../collections/types';
-import { CARD_HEIGHT, CARD_WIDTH, DEBUGGING, isMonsoon } from '../collections/constants';
+import { CARD_HEIGHT, CARD_WIDTH, DEBUGGING, isMonsoon, MAP_EDGE_FADE_PX } from '../collections/constants';
 import { useMonsoonWind } from '../collections/useMonsoonWind';
 import MonsoonDebugger from './MonsoonDebugger';
 import RainOverlay2 from './RainOverlay2';
@@ -23,7 +23,6 @@ const getMapImage = (dayCount: number) =>
 const getInnerHaze = (dayCount: number) =>
   isMonsoon(dayCount) ? "rgba(60,80,100,.45)" : (isNight(dayCount) ? "rgba(200,210,220,.3)" : "rgba(220,210,200,.7)");
 
-const MAP_EDGE_FADE_PX = 200;
 const mapEdgeFadeMask = `linear-gradient(to right, transparent 0, black ${MAP_EDGE_FADE_PX}px, black calc(100% - ${MAP_EDGE_FADE_PX}px), transparent 100%), linear-gradient(to bottom, transparent 0, black ${MAP_EDGE_FADE_PX}px, black calc(100% - ${MAP_EDGE_FADE_PX}px), transparent 100%)`;
 
 const useStyles = createUseStyles({
@@ -52,7 +51,7 @@ const useStyles = createUseStyles({
   },
   map: {
     textAlign: 'center',
-    backgroundColor: 'rgba(255,255,255,1)',
+    backgroundColor: 'rgba(255,255,255,.3)',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 'calc(10px + 2vmin)',
@@ -132,10 +131,16 @@ function Game() {
 
   const initialCardPositions: Record<string, CardPosition> = {}
 
+  // The map is 200% × 200% of the visible viewport (the .style div, which is
+  // 100vh - 32px tall). Shifting the camera down by half that height puts the
+  // map's vertical center in view ("center-left"), and we offset the starting
+  // cards by the same amount so they show up in that same view.
+  const cameraOffsetY = (window.innerHeight - 32) / 2
+
   startingCards.forEach((slug, i) => {
     const cardPosition = createCardPosition(initialCardPositions, slug, 
       Math.round(i*25+260+Math.random()*100), 
-      Math.round(200+Math.random()*100))
+      Math.round(cameraOffsetY+200+Math.random()*100))
     initialCardPositions[cardPosition.id] = cardPosition
   }); 
   
@@ -212,7 +217,7 @@ function Game() {
       </div>}
       <div className={classes.style} style={{background: getInnerHaze(dayCount)}}>
         <ScalingField>
-          <Draggable onStart={handleStart}>
+          <Draggable onStart={handleStart} defaultPosition={{x: 0, y: -cameraOffsetY}}>
             <div className={classes.map}>
               {Object.values(newCardPositions).map(cardPosition => {
                 if (!cardPosition) return null

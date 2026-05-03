@@ -58,7 +58,7 @@ export const getCardBackground = (cardPosition: CardPosition, dayCount: number) 
 
 export const getCardBorder = (cardPosition: CardPosition) => {
   if (cardPosition.maxStamina) {
-    return `solid ${CHAR_BORDER_WIDTH}px rgb(233, 210, 125)`
+    return `solid ${CHAR_BORDER_WIDTH}px rgb(93, 77, 18)`
   } else if (cardPosition.attached.length) {
     return "solid 1px rgba(0,0,0,1)"
   } else if (cardPosition.idea) {

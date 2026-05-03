@@ -3,7 +3,7 @@ import { CardPosition, CardPositionInfo, CurrentCardAttriutes, Effect, MaxCardAt
 import { CardSlug, allCards } from "./cards"
 import { includes, some } from "lodash"
 import { getCardDimensions } from "../components/Card";
-import { CARD_HEIGHT, CARD_SCREEN_MARGIN_PX, CARD_WIDTH, gameTickMs, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_Y } from "./constants";
+import { CARD_HEIGHT, CARD_WIDTH, gameTickMs, MAP_EDGE_FADE_PX, SEMICIRCLE_SPAWN_ANGLE_INCREMENT, SEMICIRCLE_SPAWN_RADIUS, SPAWN_PLACEMENT_ANGLES_PER_RING_GROWTH, SPAWN_PLACEMENT_INNER_RING_ANGLES, SPAWN_PLACEMENT_RING_RADII_PX, STACK_OFFSET_Y } from "./constants";
 
 export const randomHexId = () => {
   return Math.floor(Math.random() * 16777215).toString(16);
@@ -145,12 +145,15 @@ export const updateCardPosition = (
 };
 
 function fitCardToScreen(x: number, y: number) {
-  const screenWidth = window.innerWidth
-  const screenHeight = window.innerHeight
-  const maxX = screenWidth - CARD_WIDTH - CARD_SCREEN_MARGIN_PX
-  const maxY = screenHeight - CARD_HEIGHT - CARD_SCREEN_MARGIN_PX
-  const minX = CARD_SCREEN_MARGIN_PX
-  const minY = CARD_SCREEN_MARGIN_PX
+  // The map div is 200% × 200% of the visible viewport, so the playable
+  // coordinate space is 2× the window dimensions. Cards must stay within
+  // that space and out of the MAP_EDGE_FADE_PX faded border.
+  const playableWidth = 2 * window.innerWidth
+  const playableHeight = 2 * window.innerHeight
+  const maxX = playableWidth - CARD_WIDTH - MAP_EDGE_FADE_PX
+  const maxY = playableHeight - CARD_HEIGHT - MAP_EDGE_FADE_PX
+  const minX = MAP_EDGE_FADE_PX
+  const minY = MAP_EDGE_FADE_PX
   const newX = Math.max(Math.min(x, maxX), minX)
   const newY = Math.max(Math.min(y, maxY), minY)
   // console.log({x, y, newX, newY, maxX, maxY, minX, minY})

@@ -199,7 +199,7 @@ export const LARGE_CARD_WIDTH = 130;
 export const LARGE_CARD_HEIGHT = 220;
 export const IDEA_CARD_WIDTH = 120;
 export const IDEA_CARD_HEIGHT = 190;
-export const CHAR_BORDER_WIDTH = 5;
+export const CHAR_BORDER_WIDTH = 1;
 
 // Vertical offset between each card in an attached stack. Cards are
 // centered horizontally on each other (no X offset), but each stacked
@@ -214,6 +214,11 @@ export const TIMER_FAN_OFFSET_Y = 30;
 
 // Breathing room left around the screen edge when fitting a spawned card on screen.
 export const CARD_SCREEN_MARGIN_PX = 200;
+
+// Width of the soft fade applied to the edges of the playable map. Cards are
+// kept this far away from the map's outer edges so they don't spawn into the
+// faded region.
+export const MAP_EDGE_FADE_PX = 200;
 
 // Geometry used when fanning multiple spawned cards out around a parent card.
 export const SEMICIRCLE_SPAWN_RADIUS = 50;
